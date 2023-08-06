@@ -49,19 +49,25 @@ class Tournament():
       for match in self.matches:
         match.set_color(session)
   
-  async def activate(self, guild):
-    self.active = True
+  async def create_role(self, guild):
     role = await create_role(guild, f"{self.name} Alert", self.color_hex)
     for user in self.alert_users:
       member = guild.get_member(user.code)
       if member is not None:
         await add_to_role(member, role)
-    
-  async def deactivate(self, guild):
-    self.active = False
+        
+  async def delete_role(self, guild):
     while (role := get_role(guild, f"{self.name} Alert")) is not None:
       if role is not None:
         await delete_role(role)
+  
+  async def activate(self, guild):
+    self.active = True
+    self.create_role(guild)
+    
+  async def deactivate(self, guild):
+    self.active = False
+    self.delete_role(guild)
     users = self.alert_users.copy()
     for user in users:
       self.alert_users.remove(user)
