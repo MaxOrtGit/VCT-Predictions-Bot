@@ -38,7 +38,7 @@ except Exception as e:
   wait = None
   
 #for alternative to selenium
-from requests_html import HTMLSession, AsyncHTMLSession
+from requests_html import AsyncHTMLSession
 import nest_asyncio
 
 t1_odds_labels = ["match-bet-item-odds mod-1", "match-bet-item-odds mod- mod-1"]
