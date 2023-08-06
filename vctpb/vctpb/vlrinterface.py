@@ -54,8 +54,10 @@ def make_data_embed(soup, vlr_code, session):
   data_embed = discord.Embed(title=f"Data for match: {team1.name} vs {team2.name}", color=discord.Color.blue())
   data_embed.add_field(name="Team 1", value=team1.name)
   data_embed.add_field(name="Team 2", value=team2.name)
-  data_embed.add_field(name="Team 1 Odds", value=t1oo)
-  data_embed.add_field(name="Team 2 Odds", value=t2oo)
+  if t1oo is not None:
+    data_embed.add_field(name="Team 1 Odds", value=t1oo)
+  if t2oo is not None:
+    data_embed.add_field(name="Team 2 Odds", value=t2oo)
   data_embed.add_field(name="Match Code", value=vlr_code)
   data_embed.add_field(name="Tournament", value=tournament_name)
   data_embed.add_field(name="Tournament Code", value=tournament_code)
