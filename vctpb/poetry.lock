@@ -455,6 +455,14 @@ optional = false
 python-versions = ">=3.7"
 
 [[package]]
+name = "nest-asyncio"
+version = "1.5.7"
+description = "Patch asyncio to allow nested event loops"
+category = "main"
+optional = false
+python-versions = ">=3.5"
+
+[[package]]
 name = "numpy"
 version = "1.24.4"
 description = "Fundamental package for array computing in Python"
@@ -965,7 +973,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-ena
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "1b524e7c57e100998a0c04b92e4a3ed6b3cdde346f8e0df2bbdd1bf36f730335"
+content-hash = "f9029fe1045759d5ecd634179add11d7c7e7114de3fb36d0f42dcdbffe436bc4"
 
 [metadata.files]
 aiohttp = []
@@ -1004,6 +1012,7 @@ mako = []
 markupsafe = []
 matplotlib = []
 multidict = []
+nest-asyncio = []
 numpy = []
 outcome = []
 packaging = []
