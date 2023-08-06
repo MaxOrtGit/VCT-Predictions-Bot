@@ -57,7 +57,7 @@ from savedata import backup_full
 import secrets
 import atexit
 from autocompletes import *
-from vlrinterface import get_match_link, odds_labels
+from vlrinterface import get_match_link, make_data_embed
 
 from vlrinterface import generate_matches_from_vlr, get_code, generate_tournament, get_match_response
 from sqlaobjs import Session, mapper_registry, Engine
@@ -946,10 +946,10 @@ async def log(ctx, amount: Option(int, "How many balance changes you want to see
     
     embedds = user.get_new_balance_changes_embeds(amount)
     if embedds is None:
-      await gen_msg.edit_original_message(content = "No log generated.", ephemeral = True)
+      await gen_msg.edit_original_response(content = "No log generated.", ephemeral = True)
       return
 
-    await gen_msg.edit_original_message(content="", embed=embedds[0])
+    await gen_msg.edit_original_response(content="", embed=embedds[0])
     for embedd in embedds[1:]:
       await ctx.interaction.followup.send(embed=embedd)
 #log end
@@ -1121,37 +1121,65 @@ async def match_create(ctx):
 #match create end
 
 
+#match old_generate start
+#@matchscg.command(name = "generate", description = "Generate a match. (rerun a couple times if it doesn't work)")
+#async def match_generate(ctx, vlr_link: Option(str, "Link of vlr match."), pull_odds: Option(int, "Pull odds from vlr? Defualt is Yes.", choices = yes_no_choices, default=1, required=False)):
+#  vlr_code = get_code(vlr_link)
+#  
+#  with Session.begin() as session:
+#    if (match := get_match_from_vlr_code(vlr_code, session)) is not None:
+#      await ctx.respond(f"Match {match.t1} vs {match.t2} already exists.", ephemeral=True)
+#      return
+#    match_link = get_match_link(vlr_code)
+#    print(match_link)
+#    time = datetime.now()
+#    response = await get_match_response(match_link, pull_odds * 4, repeat = 1)
+#    print(f"time 0: {datetime.now() - time}")
+#    if response is None:
+#      await ctx.respond(f"Match {vlr_code} does not exist.", ephemeral=True)
+#      return
+#    time = datetime.now()
+#    print("soup 1")
+#    strainer = SoupStrainer(['div', 'a'], class_=['match-header-vs', "wf-card mod-dark match-bet-item", "match-header-event"])
+#    soup = BeautifulSoup(response, 'lxml', parse_only=strainer)
+#    print(f"time 2: {datetime.now() - time}")
+#    time = datetime.now()
+#    if soup is None:
+#      await ctx.respond(f"Match {vlr_code} does not exist.", ephemeral=True)
+#      return
+#    match_modal = MatchCreateModal(session, vlr_code=vlr_code, soup=soup, title="Generate Match", bot=bot)
+#    await ctx.interaction.response.send_modal(match_modal)
+#    print(f"time 3: {datetime.now() - time}")
+#    time = datetime.now()
+#match old_generate end
+
 #match generate start
-@matchscg.command(name = "generate", description = "Generate a match. (rerun a couple times if it doesn't work)")
-async def match_generate(ctx, vlr_link: Option(str, "Link of vlr match."), pull_odds: Option(int, "Pull odds from vlr? Defualt is Yes.", choices = yes_no_choices, default=1, required=False)):
+@matchscg.command(name = "generate", description = "Generates a match from a vlr link.")
+async def match_new_generate(ctx, vlr_link: Option(str, "Link of vlr match.")):
   vlr_code = get_code(vlr_link)
-  
   with Session.begin() as session:
     if (match := get_match_from_vlr_code(vlr_code, session)) is not None:
       await ctx.respond(f"Match {match.t1} vs {match.t2} already exists.", ephemeral=True)
       return
     match_link = get_match_link(vlr_code)
-    print(match_link)
-    time = datetime.now()
-    response = await get_match_response(match_link, pull_odds * 4, repeat = 1)
-    print(f"time 0: {datetime.now() - time}")
-    if response is None:
-      await ctx.respond(f"Match {vlr_code} does not exist.", ephemeral=True)
-      return
-    time = datetime.now()
-    print("soup 1")
-    strainer = SoupStrainer(['div', 'a'], class_=['match-header-vs', "wf-card mod-dark match-bet-item", "match-header-event"])
-    soup = BeautifulSoup(response, 'lxml', parse_only=strainer)
-    print(f"time 2: {datetime.now() - time}")
-    time = datetime.now()
-    if soup is None:
-      await ctx.respond(f"Match {vlr_code} does not exist.", ephemeral=True)
-      return
-    match_modal = MatchCreateModal(session, vlr_code=vlr_code, soup=soup, title="Generate Match", bot=bot)
-    await ctx.interaction.response.send_modal(match_modal)
-    print(f"time 3: {datetime.now() - time}")
-    time = datetime.now()
+    gen_msg = await ctx.respond("Loading data do not dismiss this message. (should take less than a minute)")
+    try:
+      response = await get_match_response(match_link)
+      if response is None:
+        await gen_msg.edit_original_response(content=f"Match {vlr_code} does not exist.")
+        return
+      print("soup 1")
+      strainer = SoupStrainer(['div', 'a'], class_=['match-header-vs', "wf-card mod-dark match-bet-item", "match-header-event"])
+      soup = BeautifulSoup(response, 'lxml', parse_only=strainer)
+      
+      data_embed = make_data_embed(soup, vlr_code, session)
+      
+      await gen_msg.edit_original_response(content = "", embed=data_embed, view=GenerateMatchView(bot))
+    except Exception as e:
+      await gen_msg.edit_original_response(content = f"An error occurred. @rpowerpig with this error code: {e}")
+      raise e
 #match generate end
+      
 
 #match delete start
 @matchscg.command(name = "delete", description = "Delete a match. Can only be done if betting is open.")
@@ -1287,17 +1315,17 @@ async def match_winner(ctx, match: Option(str, "Match you want to reset winner o
     if match.winner == 0:
       for bet in match.bets:
         bet.winner = 0
-      await gen_msg.edit_original_message(content="Winner has been set to None.")
+      await gen_msg.edit_original_response(content="Winner has been set to None.")
       return
     
     odds = 0.0
     #change when autocomplete
     if team == 1:
       odds = match.t1o
-      await gen_msg.edit_original_message(content=f"Winner has been set to {match.t1}.")
+      await gen_msg.edit_original_response(content=f"Winner has been set to {match.t1}.")
     else:
       odds = match.t2o
-      await gen_msg.edit_original_message(content=f"Winner has been set to {match.t2}.")
+      await gen_msg.edit_original_response(content=f"Winner has been set to {match.t2}.")
 
     msg_ids = []
     users = []
