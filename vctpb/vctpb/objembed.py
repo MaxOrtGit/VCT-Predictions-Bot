@@ -29,6 +29,7 @@ def get_match_title(match:Match):
 
 def create_match_embedded(match:Match, title):
   title = f"{title}: {get_match_title(match)}"
+  print(title)
   embed = discord.Embed(title=title, color=discord.Color.from_rgb(*hex_to_tuple(match.color_hex)))
   embed.add_field(name="Teams:", value=f"{match.t1} vs {match.t2}", inline=True)
   embed.add_field(name="Odds:", value=str(match.t1o) + " / " + str(match.t2o), inline=True)
@@ -87,8 +88,115 @@ async def send_match_list_embedded(embed_title, matches, bot, sender, followup=F
     args["view"] = MatchListView(bot, matches)
   await send_msg(sender, follow, **args)
     
-
 async def send_bet_list_embedded(embed_title, bets, bot, sender, followup=False, ephemeral=False, user=None):
+  def create_bet_list_embedded(embed_title, match_bets, show_hidden):
+    if match_bets is None:
+      return None
+
+    embed = discord.Embed(title=embed_title, color=discord.Color.blue())
+
+    for match in match_bets:
+      bets = match_bets[match]
+      name = f"{match.t1} vs {match.t2}, Odds: {match.t1o} / {match.t2o}"
+      bet_text = ""
+      for bet in bets:
+        if bet.hidden and (show_hidden == False):
+          bet_text += f"{bet.user.username}'s Hidden Bet\n"
+        else:
+          team = bet.get_team()
+          pref = ""
+          if bet.hidden:
+            pref = "Hidden"
+          pref = f"{bet.user.username}'s " + pref
+          bet_text += f"{pref} Bet Team: {team}, Amount: {bet.amount_bet}, Payout on Win: {int(math.floor(bet.get_payout()))}\n"
+      embed.add_field(name=name, value=bet_text, inline=False)
+    return embed
+  async def send_visible_hidden_bet_list_embedded(show_hidden, embed_title, match_bets, bot, sender, followup=False, ephemeral=False):
+    from views import BetListView
+    follow = followup
+    if len(match_bets) > limit:
+      while len(match_bets) > 0:
+        await send_bet_list_embedded(embed_title, match_bets[:limit], bot, sender, followup=follow, ephemeral=ephemeral)
+        follow = True
+        match_bets = match_bets[limit:]
+      return  
+      
+    if len(match_bets) == 0:
+      args = {"content": "No undecided bets.", "ephemeral": True}
+    else:
+      embed = create_bet_list_embedded("Bets:", match_bets, show_hidden)
+      args = {"embed": embed, "view": BetListView(bot), "ephemeral": ephemeral}
+    
+    await send_msg(sender, follow, **args)
+  
+  bets.sort(key=lambda x: x.user.balances[-1][1], reverse=True)
+  bets.sort(key=lambda x: x.hidden)
+  bets.sort(key=lambda x: x.match.date_created)
+  matches = []
+  matches = [bet.match for bet in bets if bet.match not in matches]
+  match_bets = { matches: [] for matches in matches }
+  [match_bets[bet.match].append(bet) for bet in bets]
+  hidden_match_bets = { matches: [] for matches in matches}
+  if user is not None:
+    for match in match_bets:
+      for bet in match_bets[match]:
+        if bet.hidden and user.code == bet.user_id:
+          hidden_match_bets[match].append(bet)
+  
+  new_hidden_match_bets = hidden_match_bets.copy()
+  for match in hidden_match_bets:
+    if len(hidden_match_bets[match]) == 0:
+      new_hidden_match_bets.pop(match)
+      
+  hidden_match_bets = new_hidden_match_bets
+  
+  await send_visible_hidden_bet_list_embedded(False, embed_title, match_bets, bot, sender, followup=followup, ephemeral=ephemeral)
+  if len(hidden_match_bets) > 0:
+    await send_visible_hidden_bet_list_embedded(True, embed_title, hidden_match_bets, bot, sender, followup=True, ephemeral=True)
+
+
+async def old_send_bet_list_embedded(embed_title, bets, bot, sender, followup=False, ephemeral=False, user=None):
+  def create_bet_list_embedded(embed_title, match_bets, show_hidden):
+    if match_bets is None:
+      return None
+
+    embed = discord.Embed(title=embed_title, color=discord.Color.blue())
+
+    last_match_id = None
+    for match, bet in match_bets:
+      name = ""
+      if match.code != last_match_id:
+        name = f"{match.t1} vs {match.t2}, Odds: {match.t1o} / {match.t2o}"
+        last_match_id = match.code
+      if bet.hidden and (show_hidden == False):
+        embed.add_field(name=name, value=f"{bet.user.username}'s Hidden Bet", inline=False)
+      else:
+        team = bet.get_team()
+        pref = ""
+        if bet.hidden:
+          pref = "Hidden"
+        pref = f"{bet.user.username}'s " + pref
+        embed.add_field(name=name, value=f"{pref} Bet Team: {team}, Amount: {bet.amount_bet}, Payout on Win: {int(math.floor(bet.get_payout()))}", inline=False)
+    return embed
+  async def send_visible_hidden_bet_list_embedded(show_hidden, embed_title, match_bets, bot, sender, followup=False, ephemeral=False):
+    from views import BetListView
+    print(match_bets)
+    follow = followup
+    if len(match_bets) > limit:
+      while len(match_bets) > 0:
+        await send_bet_list_embedded(embed_title, match_bets[:limit], bot, sender, followup=follow, ephemeral=ephemeral)
+        follow = True
+        match_bets = match_bets[limit:]
+      return  
+      
+    if len(match_bets) == 0:
+      args = {"content": "No undecided bets.", "ephemeral": True}
+    else:
+      embed = create_bet_list_embedded("Bets:", match_bets, show_hidden)
+      args = {"embed": embed, "view": BetListView(bot), "ephemeral": ephemeral}
+    
+    await send_msg(sender, follow, **args)
+  
   bets.sort(key=lambda x: x.user.balances[-1][1], reverse=True)
   bets.sort(key=lambda x: x.hidden)
   bets.sort(key=lambda x: x.match.date_created)
@@ -104,27 +212,7 @@ async def send_bet_list_embedded(embed_title, bets, bot, sender, followup=False,
   await send_visible_hidden_bet_list_embedded(False, embed_title, match_bets, bot, sender, followup=followup, ephemeral=ephemeral)
   if len(hidden_match_bets) > 0:
     await send_visible_hidden_bet_list_embedded(True, embed_title, hidden_match_bets, bot, sender, followup=True, ephemeral=True)
-        
-# should only be used in send_bet_list_embedded
-async def send_visible_hidden_bet_list_embedded(show_hidden, embed_title, match_bets, bot, sender, followup=False, ephemeral=False):
-  from views import BetListView
-  print(match_bets)
-  follow = followup
-  if len(match_bets) > limit:
-    while len(match_bets) > 0:
-      await send_bet_list_embedded(embed_title, match_bets[:limit], bot, sender, followup=follow, ephemeral=ephemeral)
-      follow = True
-      match_bets = match_bets[limit:]
-    return  
-    
-  if len(match_bets) == 0:
-    args = {"content": "No undecided bets.", "ephemeral": True}
-  else:
-    embed = create_bet_list_embedded("Bets:", match_bets, show_hidden)
-    args = {"embed": embed, "view": BetListView(bot), "ephemeral": ephemeral}
-  
-  await send_msg(sender, follow, **args)
-  
+
 
 def create_bet_hidden_embedded(bet, title):
   title = f"{title}: {bet.user.username}'s Hidden Bet on {bet.t1} vs {bet.t2}."
@@ -182,28 +270,6 @@ def create_bet_embedded(bet: Bet, title):
   return embed
 
 
-def create_bet_list_embedded(embed_title, match_bets, show_hidden):
-  if match_bets is None:
-    return None
-
-  embed = discord.Embed(title=embed_title, color=discord.Color.blue())
-
-  last_match_id = None
-  for match, bet in match_bets:
-    name = ""
-    if match.code != last_match_id:
-      name = f"{match.t1} vs {match.t2}, Odds: {match.t1o} / {match.t2o}"
-      last_match_id = match.code
-    if bet.hidden and (show_hidden == False):
-      embed.add_field(name=name, value=f"{bet.user.username}'s Hidden Bet", inline=False)
-    else:
-      team = bet.get_team()
-      pref = ""
-      if bet.hidden:
-        pref = "Hidden"
-      pref = f"{bet.user.username}'s " + pref
-      embed.add_field(name=name, value=f"{pref} Bet Team: {team}, Amount: {bet.amount_bet}, Payout on Win: {int(math.floor(bet.get_payout()))}", inline=False)
-  return embed
 
 def create_user_embedded(user:User, session=None):
   embed = discord.Embed(title=f"{user.username}'s balance:", color=discord.Color.from_rgb(*hex_to_tuple(user.color_hex)))
