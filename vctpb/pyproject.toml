@@ -21,6 +21,7 @@ pymixbox = "^2.0.0"
 lxml = "^4.9.2"
 selenium = "^4.11.2"
 requests-html = "^0.10.0"
+nest-asyncio = "^1.5.7"
 
 [tool.poetry.dev-dependencies]
 

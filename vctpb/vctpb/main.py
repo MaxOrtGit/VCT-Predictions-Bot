@@ -190,7 +190,6 @@ async def on_ready():
   atexit.register(backup_full)
   auto_backup_timer.start()
   print("\n-----------Bot Starting-----------\n")
-  await get_match_response("https://www.vlr.gg/247100")
   auto_generate_matches_from_vlr_timer.start()
   bot.add_view(MatchView(bot, None))
   bot.add_view(BetView(bot, None))
