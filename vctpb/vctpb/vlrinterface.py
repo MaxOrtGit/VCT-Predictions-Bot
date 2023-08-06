@@ -16,7 +16,7 @@ from Tournament import Tournament
 from Team import Team
 from Match import Match
 from objembed import send_match_list_embedded
-from dbinterface import get_channel_from_db, get_from_db, add_to_db, get_unique_code
+from dbinterface import get_channel_from_db, get_from_db, add_to_db, get_unique_code, get_setting
 from autocompletes import get_team_from_vlr_code, get_match_from_vlr_code, get_tournament_from_vlr_code
 from utils import get_random_hex_color, balance_odds, mix_colors, get_date, to_float, to_digit, tuple_to_hex
 import sys
@@ -45,18 +45,23 @@ t1_odds_labels = ["match-bet-item-odds mod-1", "match-bet-item-odds mod- mod-1"]
 t2_odds_labels = ["match-bet-item-odds mod-2", "match-bet-item-odds mod- mod-2"]
 odds_labels = t1_odds_labels + t2_odds_labels
 
+use_HTMLSession = get_setting("use_HTMLSession")
+if use_HTMLSession is None:
+  use_HTMLSession = True
+else:
+  use_HTMLSession = use_HTMLSession.lower() == "true"
+
 async def get_match_response(match_link, odds_timeout=10):
   if driver is not None:
     driver.get(match_link)
     if odds_timeout != 0:
-      print(match_link)
       try:
         WebDriverWait(driver, odds_timeout).until(EC.element_to_be_clickable((By.CLASS_NAME, "match-bet-item-odds")))
       except:
         print("odds not found")
     return driver.page_source
   
-  if odds_timeout < 5:
+  if odds_timeout < 5 or not use_HTMLSession:
     web_session = requests.Session()
     response = web_session.get(match_link).text
     return response
