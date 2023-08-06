@@ -479,8 +479,7 @@ async def bet_cancel(ctx, bet: Option(str, "Bet you want to cancel.", autocomple
       await ctx.respond(content="Match betting has closed, you cannot cancel the bet.", ephemeral=True)
       return
       
-    
-    user = bet.user
+  
     if bet.hidden == 0:
       embedd = create_bet_embedded(bet, f"Cancelled Bet")
     else:
@@ -523,7 +522,6 @@ async def bet_find(ctx, bet: Option(str, "Bet you get embed of.", autocomplete=b
         return
     bet = nbet
     
-    user = bet.user
     if bet.user_id == ctx.user.id or bet.hidden == False:
       embedd = create_bet_embedded(bet, f"Bet")
       inter = await ctx.respond(embed=embedd, ephemeral=bet.hidden, view=BetView(bot, bet))
@@ -558,9 +556,8 @@ async def bet_hide(ctx, bet: Option(str, "Bet you want to hide.", autocomplete=u
     
     bet.hidden = True
     
-    user = bet.user
     title = f"Bet"
-    embedd = create_bet_hidden_embedded(bet, title, session)
+    embedd = create_bet_hidden_embedded(bet, title)
     inter = await ctx.respond(embed=embedd)
     await bet.message_ids.append(inter)
   await edit_all_messages(bot, bet.message_ids, embedd)
