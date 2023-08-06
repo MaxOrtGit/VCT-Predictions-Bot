@@ -1057,7 +1057,7 @@ async def match_bets(ctx, match: Option(str, "Match you want bets of.", autocomp
     
     if type == 0:
       #short
-      await send_bet_list_embedded("Bets", get_current_bets(session), bot, ctx, user=user)
+      await send_bet_list_embedded("Bets", match.bets, bot, ctx, user=user)
           
     
     elif type == 1:
