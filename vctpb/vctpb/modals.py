@@ -12,9 +12,15 @@ from views import MatchView, BetView
 from objembed import create_match_embedded, create_bet_embedded, create_bet_hidden_embedded
 from convert import edit_all_messages
 
+def get_from_field(embed, field_name):
+  for field in embed.fields:
+    if field.name == field_name:
+      return field.value
+  return None
+
 #match create modal start
 class MatchCreateModal(Modal):
-  def __init__(self, session, balance_odds=1, soup=None, vlr_code=None, bot=None, *args, **kwargs) -> None:
+  def __init__(self, session, balance_odds=1, soup=None, vlr_code=None, bot=None, *args, data_embed=None, **kwargs) -> None:
     #time function
     time = datetime.now()
     
@@ -34,7 +40,18 @@ class MatchCreateModal(Modal):
     self.bot = bot
     team1 = None
     team2 = None
-    if vlr_code is not None:
+    if data_embed is not None:
+      team1 = get_from_field(data_embed, "Team 1")
+      team1 = get_from_db("Team", team1, session)
+      team2 = get_from_field(data_embed, "Team 2")
+      team2 = get_from_db("Team", team2, session)
+      
+      t1oo = get_from_field(data_embed, "Team 1 Odds")
+      t2oo = get_from_field(data_embed, "Team 2 Odds")
+      vlr_code = get_from_field(data_embed, "Match Code")
+      tournament_name = get_from_field(data_embed, "Tournament")
+      tournament_code = get_from_field(data_embed, "Tournament Code")
+    elif (vlr_code is not None) and (soup is not None):
       time2 = datetime.now()
       t1oo, t2oo = get_odds_from_match_page(soup)
       print("time 2.1", datetime.now() - time2)
@@ -76,7 +93,7 @@ class MatchCreateModal(Modal):
     with Session.begin() as session:
       wait_msg = await interaction.response.send_message(f"Generating Match.", ephemeral=True)
       if (self.children[0].value is None) or (self.children[1].value is None) or (self.children[2].value is None) or (self.children[3].value is None) or (self.children[4].value is None):
-        await wait_msg.edit_original_message(content="Error in match creation, report bug.")
+        await wait_msg.edit_original_response(content="Error in match creation, report bug.")
         return
         
       team_one = self.children[0].value.strip()
@@ -112,18 +129,18 @@ class MatchCreateModal(Modal):
           team_one_old_odds, team_two_old_odds = "".join(_ for _ in odds_combined if _ in f".1234567890{spliter}").split(spliter)
           break
       else:
-        await wait_msg.edit_original_message(content = f"Odds are not valid. Odds must be [odds 1]/[odds 2].")
+        await wait_msg.edit_original_response(content = f"Odds are not valid. Odds must be [odds 1]/[odds 2].")
         return
       
       if (to_float(team_one_old_odds) is None) or (to_float(team_two_old_odds) is None): 
-        await wait_msg.edit_original_message(content = f"Odds are not valid. Odds must be [odds 1]/[odds 2].")
+        await wait_msg.edit_original_response(content = f"Odds are not valid. Odds must be [odds 1]/[odds 2].")
         return
       
       team_one_old_odds = to_float(team_one_old_odds)
       team_two_old_odds = to_float(team_two_old_odds)
       
       if team_one_old_odds <= 1 or team_two_old_odds <= 1:
-        await wait_msg.edit_original_message(content = f"Odds must be greater than 1.")
+        await wait_msg.edit_original_response(content = f"Odds must be greater than 1.")
         return
       
       if self.balance_odds == 1:
@@ -142,7 +159,7 @@ class MatchCreateModal(Modal):
       
       channel = await self.bot.fetch_channel(get_channel_from_db("match", session))
       msg = await channel.send(embed=embedd, view=MatchView(self.bot, match))
-      await wait_msg.edit_original_message(content = f"Match created in {channel.mention}.")
+      await wait_msg.edit_original_response(content = f"Match created in {channel.mention}.")
       
       await match.message_ids.append(msg)
       add_to_db(match, session)

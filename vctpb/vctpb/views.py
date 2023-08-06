@@ -299,3 +299,15 @@ class BetListView(View):
     await show_available_bets(interaction, self.bot)
   
     
+class GenerateMatchView(View):
+  def __init__(self, bot):
+    self.bot = bot
+    super().__init__(timeout=None)
+    
+  @discord.ui.button(label='Generate Match', custom_id="generate_match", style=discord.ButtonStyle.green)
+  async def generate_match_callback(self, button, interaction):
+    from modals import MatchCreateModal
+    embedd = interaction.message.embeds[0]
+    with Session.begin() as session:
+      match_modal = MatchCreateModal(session, 1, data_embed=embedd, title="Generate Match", bot=self.bot)
+      await interaction.response.send_modal(match_modal)

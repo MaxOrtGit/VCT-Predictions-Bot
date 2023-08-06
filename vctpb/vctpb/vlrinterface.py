@@ -19,7 +19,7 @@ from objembed import send_match_list_embedded
 from dbinterface import get_channel_from_db, get_from_db, add_to_db, get_unique_code, get_setting
 from autocompletes import get_team_from_vlr_code, get_match_from_vlr_code, get_tournament_from_vlr_code
 from utils import get_random_hex_color, balance_odds, mix_colors, get_date, to_float, to_digit, tuple_to_hex
-import sys
+import discord
 
 try:
   #import webdriver, WebDriverWait, By, and EC
@@ -45,10 +45,23 @@ except Exception as e:
 
 t1_odds_labels = ["match-bet-item-odds mod-1", "match-bet-item-odds mod- mod-1"]
 t2_odds_labels = ["match-bet-item-odds mod-2", "match-bet-item-odds mod- mod-2"]
-odds_labels = t1_odds_labels + t2_odds_labels
 
+def make_data_embed(soup, vlr_code, session):
+  t1oo, t2oo = get_odds_from_match_page(soup)
+  team1, team2 = get_teams_from_match_page(soup, session, second_query=False)
+  tournament_name, tournament_code = get_tournament_name_and_code_from_match_page(soup)
+  
+  data_embed = discord.Embed(title=f"Data for match: {team1.name} vs {team2.name}", color=discord.Color.blue())
+  data_embed.add_field(name="Team 1", value=team1.name)
+  data_embed.add_field(name="Team 2", value=team2.name)
+  data_embed.add_field(name="Team 1 Odds", value=t1oo)
+  data_embed.add_field(name="Team 2 Odds", value=t2oo)
+  data_embed.add_field(name="Match Code", value=vlr_code)
+  data_embed.add_field(name="Tournament", value=tournament_name)
+  data_embed.add_field(name="Tournament Code", value=tournament_code)
+  return data_embed
 
-async def get_match_response(match_link, odds_timeout=10, repeat=3):
+async def get_match_response(match_link, odds_timeout=4, repeat=3):
   if driver is not None:
     if odds_timeout != 0:
       for _ in range(repeat):
@@ -57,7 +70,7 @@ async def get_match_response(match_link, odds_timeout=10, repeat=3):
           WebDriverWait(driver, odds_timeout).until(EC.element_to_be_clickable((By.CLASS_NAME, "match-bet-item-odds")))
           break
         except:
-          print("odds not found")
+          print(f"odds not found {_}")
     else:
       driver.get(match_link)
     return driver.page_source
