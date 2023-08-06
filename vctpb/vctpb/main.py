@@ -190,6 +190,7 @@ async def on_ready():
   atexit.register(backup_full)
   auto_backup_timer.start()
   print("\n-----------Bot Starting-----------\n")
+  await get_match_response("https://www.vlr.gg/247100")
   auto_generate_matches_from_vlr_timer.start()
   bot.add_view(MatchView(bot, None))
   bot.add_view(BetView(bot, None))
@@ -1133,7 +1134,7 @@ async def match_generate(ctx, vlr_link: Option(str, "Link of vlr match."), pull_
     match_link = get_match_link(vlr_code)
     print(match_link)
     time = datetime.now()
-    response = get_match_response(match_link, pull_odds * 3)
+    response = await get_match_response(match_link, pull_odds * 4)
     print(f"time 0: {datetime.now() - time}")
     time = datetime.now()
     if response is None:
@@ -1143,7 +1144,7 @@ async def match_generate(ctx, vlr_link: Option(str, "Link of vlr match."), pull_
     time = datetime.now()
     print("soup 1")
     strainer = SoupStrainer(['div', 'a'], class_=['match-header-vs', "wf-card mod-dark match-bet-item", "match-header-event"])
-    soup = BeautifulSoup(response, 'lxml')
+    soup = BeautifulSoup(response, 'lxml', parse_only=strainer)
     print(f"time 2: {datetime.now() - time}")
     time = datetime.now()
     if soup is None:
@@ -1362,16 +1363,14 @@ async def hide_from_leaderboard(ctx):
     user.hidden = not user.hidden
     print(user.hidden)
 
-#tournament start 
-tournamentsgc = SlashCommandGroup(
-  name = "tournament", 
-  description = "Start, color, and rename tournaments.",
+#alert start
+alertscg = SlashCommandGroup(
+  name = "alert",
+  description = "Get alerts for things.",
   guild_ids = gid,
 )
 
-#tournament alert start
-@tournamentsgc.command(name = "alert", description = "Get alert when a tournament is created.")
-async def tournament_alert(ctx, tournament: Option(str, "Tournament you want to get alerts for.", autocomplete = tournament_autocomplete)):
+async def do_tournament_alert(ctx, tournament):
   with Session.begin() as session:
     if (user := await get_user_from_ctx(ctx, ctx.author, session)) is None: return
     if (ntournament := await obj_from_autocomplete_tuple(ctx, get_all_db("Tournament", session), tournament, "Tournament", session)) is None:
@@ -1384,6 +1383,26 @@ async def tournament_alert(ctx, tournament: Option(str, "Tournament you want to 
       await ctx.respond(f"You are added to alerts for {tournament.name}.", ephemeral = True)
     else:
       await ctx.respond(f"You are removed from alerts for {tournament.name}.", ephemeral = True)
+
+#alert tournament start
+@alertscg.command(name = "tournament", description = "Toggle alert when a match in tournament is about to close.")
+async def alert_tournament(ctx, tournament: Option(str, "Tournament you want to toggle alerts for.", autocomplete = tournament_autocomplete)):
+  await do_tournament_alert(ctx, tournament)
+
+bot.add_application_command(alertscg)
+#alert end
+
+#tournament start 
+tournamentsgc = SlashCommandGroup(
+  name = "tournament", 
+  description = "Start, color, and rename tournaments.",
+  guild_ids = gid,
+)
+
+#tournament alert start
+@tournamentsgc.command(name = "alert", description = "Get alert when a match in tournament is about to close.")
+async def tournament_alert(ctx, tournament: Option(str, "Tournament you want to get alerts for.", autocomplete = tournament_autocomplete)):
+  await do_tournament_alert(ctx, tournament)
 #tournament alert end
 
 #tournament start start
@@ -1538,7 +1557,31 @@ async def tournament_link(ctx, name: Option(str, "Name of tournament.", autocomp
     await ctx.respond(embed=embedd)
 #tournament link end
 
+#tournament create_role start
+@tournamentsgc.command(name = "create_role", description = "Creates a role for a tournament.")
+async def tournament_create_role(ctx, name: Option(str, "Name of tournament.", autocomplete=tournament_autocomplete)):
+  with Session.begin() as session:
+    if (tournament := await obj_from_autocomplete_tuple(ctx, get_all_db("Tournament", session), name, "Tournament", session)) is None:
+      await ctx.respond(f'Tournament "{name}" not found.', ephemeral = True)
+      return
+    await tournament.create_role(ctx.guild)
+    embedd = create_tournament_embedded(f"Created Role for Tournament: {tournament.name}", tournament)
+    await ctx.respond(embed=embedd)
+
 bot.add_application_command(tournamentsgc)
+#tournament create_role end
+
+#tournament delete_role start
+@tournamentsgc.command(name = "delete_role", description = "Deletes a role for a tournament.")
+async def tournament_delete_role(ctx, name: Option(str, "Name of tournament.", autocomplete=tournament_autocomplete)):
+  with Session.begin() as session:
+    if (tournament := await obj_from_autocomplete_tuple(ctx, get_all_db("Tournament", session), name, "Tournament", session)) is None:
+      await ctx.respond(f'Tournament "{name}" not found.', ephemeral = True)
+      return
+    await tournament.delete_role(ctx.guild)
+    embedd = create_tournament_embedded(f"Deleted Role for Tournament: {tournament.name}", tournament)
+    await ctx.respond(embed=embedd)
+
 #tournament end
 
 #team start

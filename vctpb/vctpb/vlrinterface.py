@@ -1,5 +1,3 @@
-# web scape the VLR.gg main page
-
 #import libraries
 import re
 from bs4 import BeautifulSoup
@@ -38,18 +36,39 @@ except Exception as e:
   print("selenium not installed properly, using requests instead (no odds)")
   driver = None
   wait = None
+  
+#for alternative to selenium
+from requests_html import HTMLSession, AsyncHTMLSession
+import nest_asyncio
 
 t1_odds_labels = ["match-bet-item-odds mod-1", "match-bet-item-odds mod- mod-1"]
 t2_odds_labels = ["match-bet-item-odds mod-2", "match-bet-item-odds mod- mod-2"]
 odds_labels = t1_odds_labels + t2_odds_labels
 
-def get_match_response(match_link, odds_timeout=5):
+async def get_match_response(match_link, odds_timeout=10):
   if driver is not None:
     driver.get(match_link)
     if odds_timeout != 0:
-      WebDriverWait(driver, 0.5).until(EC.element_to_be_clickable((By.CLASS_NAME, "match-bet-item-odds")))
+      print(match_link)
+      try:
+        WebDriverWait(driver, odds_timeout).until(EC.element_to_be_clickable((By.CLASS_NAME, "match-bet-item-odds")))
+      except:
+        print("odds not found")
     return driver.page_source
-  else:
+  
+  if odds_timeout < 5:
+    web_session = requests.Session()
+    response = web_session.get(match_link).text
+    return response
+  
+  try:
+    nest_asyncio.apply()
+    s = AsyncHTMLSession()
+    response = await s.get(match_link)
+    await response.html.arender(wait=3, sleep=3)
+    return response.html.html
+  except Exception as e:
+    print(e)
     web_session = requests.Session()
     response = web_session.get(match_link).text
     return response
@@ -397,7 +416,7 @@ def get_odds_from_match_page(soup):
     t1oo = to_float(t1_vlr_odds_label.get_text().strip())
     t2oo = to_float(t2_vlr_odds_label.get_text().strip())
     found_odds = True
-    if (t1oo is None) and (t2oo is None):
+    if (t1oo is None) or (t2oo is None):
       t1oo = None
       t2oo = None
       continue
@@ -470,8 +489,7 @@ async def vlr_create_match(match_code, tournament, bot, session=None):
       return None
     
   match_link = get_match_link(match_code)
-  web_session = requests.Session()
-  response = get_match_response(match_link)
+  response = await get_match_response(match_link)
   #print("soup 6")
   soup = BeautifulSoup(response, 'lxml')
   

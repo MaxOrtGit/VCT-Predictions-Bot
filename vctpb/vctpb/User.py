@@ -73,12 +73,12 @@ class User():
     member = guild.get_member(self.code)
     if tournament in self.alert_tournaments:
       self.alert_tournaments.remove(tournament)
-      if member is not None:
+      if (member is not None) and (role is not None):
         await remove_from_role(member, role)
       return False
     else:
       self.alert_tournaments.append(tournament)
-      if member is not None:
+      if (member is not None) and (role is not None):
         await add_to_role(member, role)
       return True
   
