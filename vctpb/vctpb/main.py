@@ -1133,13 +1133,11 @@ async def match_generate(ctx, vlr_link: Option(str, "Link of vlr match."), pull_
     match_link = get_match_link(vlr_code)
     print(match_link)
     time = datetime.now()
-    response = await get_match_response(match_link, pull_odds * 4)
+    response = await get_match_response(match_link, pull_odds * 4, repeat = 1)
     print(f"time 0: {datetime.now() - time}")
-    time = datetime.now()
     if response is None:
       await ctx.respond(f"Match {vlr_code} does not exist.", ephemeral=True)
       return
-    print(f"time 1: {datetime.now() - time}")
     time = datetime.now()
     print("soup 1")
     strainer = SoupStrainer(['div', 'a'], class_=['match-header-vs', "wf-card mod-dark match-bet-item", "match-header-event"])

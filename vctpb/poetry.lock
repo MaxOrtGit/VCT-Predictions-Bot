@@ -48,14 +48,6 @@ typing-extensions = ">=4"
 tz = ["python-dateutil"]
 
 [[package]]
-name = "appdirs"
-version = "1.4.4"
-description = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
-category = "main"
-optional = false
-python-versions = "*"
-
-[[package]]
 name = "apscheduler"
 version = "3.10.1"
 description = "In-process task scheduler with Cron-like capabilities"
@@ -168,14 +160,6 @@ optional = false
 python-versions = ">=3.7.0"
 
 [[package]]
-name = "colorama"
-version = "0.4.6"
-description = "Cross-platform colored terminal text."
-category = "main"
-optional = false
-python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
-
-[[package]]
 name = "contourpy"
 version = "1.1.0"
 description = "Python library for calculating contours of 2D quadrilateral grids"
@@ -213,14 +197,6 @@ sdist = ["build"]
 ssh = ["bcrypt (>=3.1.5)"]
 test = ["pytest (>=6.2.0)", "pytest-benchmark", "pytest-cov", "pytest-xdist", "pretend"]
 test-randomorder = ["pytest-randomly"]
-
-[[package]]
-name = "cssselect"
-version = "1.2.0"
-description = "cssselect parses CSS3 Selectors and translates them to XPath 1.0"
-category = "main"
-optional = false
-python-versions = ">=3.7"
 
 [[package]]
 name = "cycler"
@@ -265,17 +241,6 @@ python-versions = ">=3.7"
 
 [package.extras]
 test = ["pytest (>=6)"]
-
-[[package]]
-name = "fake-useragent"
-version = "1.2.1"
-description = "Up-to-date simple useragent faker with real world database"
-category = "main"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-importlib-resources = {version = ">=5.0", markers = "python_version < \"3.10\""}
 
 [[package]]
 name = "fonttools"
@@ -455,14 +420,6 @@ optional = false
 python-versions = ">=3.7"
 
 [[package]]
-name = "nest-asyncio"
-version = "1.5.7"
-description = "Patch asyncio to allow nested event loops"
-category = "main"
-optional = false
-python-versions = ">=3.5"
-
-[[package]]
 name = "numpy"
 version = "1.24.4"
 description = "Fundamental package for array computing in Python"
@@ -488,14 +445,6 @@ description = "Core utilities for Python packages"
 category = "main"
 optional = false
 python-versions = ">=3.7"
-
-[[package]]
-name = "parse"
-version = "1.19.1"
-description = "parse() is the opposite of format()"
-category = "main"
-optional = false
-python-versions = "*"
 
 [[package]]
 name = "pillow"
@@ -533,20 +482,6 @@ description = "C parser in Python"
 category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-
-[[package]]
-name = "pyee"
-version = "11.0.0"
-description = "A rough port of Node.js's EventEmitter to Python with a few tricks of its own"
-category = "main"
-optional = false
-python-versions = ">=3.8"
-
-[package.dependencies]
-typing-extensions = "*"
-
-[package.extras]
-dev = ["flake8", "flake8-black", "pytest", "black", "isort", "jupyter-console", "mkdocs", "mkdocs-include-markdown-plugin", "mkdocstrings", "toml", "tox", "trio", "twine", "twisted", "validate-pyproject", "trio", "trio-typing", "pytest-asyncio", "pytest-trio"]
 
 [[package]]
 name = "pygithub"
@@ -614,36 +549,6 @@ python-versions = ">=3.6.8"
 diagrams = ["jinja2", "railroad-diagrams"]
 
 [[package]]
-name = "pyppeteer"
-version = "0.0.25"
-description = "Headless chrome/chromium automation library (unofficial port of puppeteer)"
-category = "main"
-optional = false
-python-versions = ">=3.5"
-
-[package.dependencies]
-appdirs = "*"
-pyee = "*"
-tqdm = "*"
-urllib3 = "*"
-websockets = "*"
-
-[[package]]
-name = "pyquery"
-version = "2.0.0"
-description = "A jquery-like library for python"
-category = "main"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-cssselect = ">=1.2.0"
-lxml = ">=2.1"
-
-[package.extras]
-test = ["requests", "webob", "webtest", "pytest", "pytest-cov"]
-
-[[package]]
 name = "pysocks"
 version = "1.7.1"
 description = "A Python SOCKS client module. See https://github.com/Anorov/PySocks for more information."
@@ -687,23 +592,6 @@ urllib3 = ">=1.21.1,<3"
 [package.extras]
 socks = ["PySocks (>=1.5.6,!=1.5.7)"]
 use_chardet_on_py3 = ["chardet (>=3.0.2,<6)"]
-
-[[package]]
-name = "requests-html"
-version = "0.10.0"
-description = "HTML Parsing for Humans."
-category = "main"
-optional = false
-python-versions = ">=3.6.0"
-
-[package.dependencies]
-bs4 = "*"
-fake-useragent = "*"
-parse = "*"
-pyppeteer = ">=0.0.14"
-pyquery = "*"
-requests = "*"
-w3lib = "*"
 
 [[package]]
 name = "selenium"
@@ -809,23 +697,6 @@ optional = false
 python-versions = ">=3.7"
 
 [[package]]
-name = "tqdm"
-version = "4.65.0"
-description = "Fast, Extensible Progress Meter"
-category = "main"
-optional = false
-python-versions = ">=3.7"
-
-[package.dependencies]
-colorama = {version = "*", markers = "platform_system == \"Windows\""}
-
-[package.extras]
-dev = ["py-make (>=0.1.0)", "twine", "wheel"]
-notebook = ["ipywidgets (>=6)"]
-slack = ["slack-sdk"]
-telegram = ["requests"]
-
-[[package]]
 name = "trio"
 version = "0.22.2"
 description = "A friendly Python library for async concurrency and I/O"
@@ -912,22 +783,6 @@ socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
 zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
-name = "w3lib"
-version = "2.1.2"
-description = "Library of web-related functions"
-category = "main"
-optional = false
-python-versions = ">=3.7"
-
-[[package]]
-name = "websockets"
-version = "11.0.3"
-description = "An implementation of the WebSocket Protocol (RFC 6455 & 7692)"
-category = "main"
-optional = false
-python-versions = ">=3.7"
-
-[[package]]
 name = "wrapt"
 version = "1.15.0"
 description = "Module for decorators, wrappers and monkey patching."
@@ -973,13 +828,12 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-ena
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "f9029fe1045759d5ecd634179add11d7c7e7114de3fb36d0f42dcdbffe436bc4"
+content-hash = "6310700e6da921d20a3ddbee298b772490274943e43b471fae77a754f719649e"
 
 [metadata.files]
 aiohttp = []
 aiosignal = []
 alembic = []
-appdirs = []
 apscheduler = []
 async-timeout = []
 attrs = []
@@ -989,15 +843,12 @@ bs4 = []
 certifi = []
 cffi = []
 charset-normalizer = []
-colorama = []
 contourpy = []
 cryptography = []
-cssselect = []
 cycler = []
 deprecated = []
 emoji = []
 exceptiongroup = []
-fake-useragent = []
 fonttools = []
 frozenlist = []
 greenlet = []
@@ -1012,27 +863,21 @@ mako = []
 markupsafe = []
 matplotlib = []
 multidict = []
-nest-asyncio = []
 numpy = []
 outcome = []
 packaging = []
-parse = []
 pillow = []
 py-cord = []
 pycparser = []
-pyee = []
 pygithub = []
 pyjwt = []
 pymixbox = []
 pynacl = []
 pyparsing = []
-pyppeteer = []
-pyquery = []
 pysocks = []
 python-dateutil = []
 pytz = []
 requests = []
-requests-html = []
 selenium = []
 setuptools-scm = []
 six = []
@@ -1041,7 +886,6 @@ sortedcontainers = []
 soupsieve = []
 sqlalchemy = []
 tomli = []
-tqdm = []
 trio = []
 trio-websocket = []
 typing-extensions = []
@@ -1049,8 +893,6 @@ tzdata = []
 tzlocal = []
 ujson = []
 urllib3 = []
-w3lib = []
-websockets = []
 wrapt = []
 wsproto = []
 yarl = []
