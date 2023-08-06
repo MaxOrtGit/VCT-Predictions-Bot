@@ -493,10 +493,10 @@ class User():
         t1 = bet.t1
         t2 = bet.t2
         if bet.winner == 1:
-          t1 = fr"$\bf{t1}$"
+          t1 = r"$\bf{"  + t1 + r"}$"
         elif bet.winner == 2:
-          t2 = fr"$\bf{t2}$"
-        label = f"{t1} vs {t2}"
+          t2 = r"$\bf{"  + t2 + r"}$"
+        label = t1 + " vs " + t2
         labels.append(label)
         label_colors.append(f"#{bet.color_hex}")
         balances.append(amount)
@@ -677,10 +677,10 @@ def get_multi_graph_image(users, balance_range_ambig, dpi, session=None):
         t1 = match.t1
         t2 = match.t2
         if match.winner == 1:
-          t1 = fr"$\bf{t1}$"
+          t1 = r"$\bf{"  + t1 + r"}$"
         elif match.winner == 2:
-          t2 = fr"$\bf{t2}$"
-        label = f"{t1} vs {t2}"
+          t2 = r"$\bf{"  + t2 + r"}$"
+        label = t1 + " vs " + t2
         labels.append(label)
         label_colors.append(f"#{match.color_hex}")
         last_id = f"id_{match.code}"
