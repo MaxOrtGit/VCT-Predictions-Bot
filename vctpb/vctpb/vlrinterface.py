@@ -29,54 +29,42 @@ try:
   from selenium.webdriver.support import expected_conditions as EC
   chrome_options = webdriver.ChromeOptions()
   chrome_options.add_argument("headless")
-  driver = webdriver.Chrome(options=chrome_options)
-  wait = WebDriverWait(driver, 10)
+  chromedriver_path  = get_setting("chromedriver_path")
+  if chromedriver_path is None:
+    driver = webdriver.Chrome(options=chrome_options)
+  else:
+    from selenium.webdriver.chrome.service import Service
+    service = Service(chromedriver_path)
+    driver = webdriver.Chrome(service=service, options=chrome_options)
 except Exception as e:
   print(e)
   print("selenium not installed properly, using requests instead (no odds)")
   driver = None
   wait = None
   
-#for alternative to selenium
-from requests_html import AsyncHTMLSession
-import nest_asyncio
 
 t1_odds_labels = ["match-bet-item-odds mod-1", "match-bet-item-odds mod- mod-1"]
 t2_odds_labels = ["match-bet-item-odds mod-2", "match-bet-item-odds mod- mod-2"]
 odds_labels = t1_odds_labels + t2_odds_labels
 
-use_HTMLSession = get_setting("use_HTMLSession")
-if use_HTMLSession is None:
-  use_HTMLSession = True
-else:
-  use_HTMLSession = use_HTMLSession.lower() == "true"
 
-async def get_match_response(match_link, odds_timeout=10):
+async def get_match_response(match_link, odds_timeout=10, repeat=3):
   if driver is not None:
-    driver.get(match_link)
     if odds_timeout != 0:
-      try:
-        WebDriverWait(driver, odds_timeout).until(EC.element_to_be_clickable((By.CLASS_NAME, "match-bet-item-odds")))
-      except:
-        print("odds not found")
+      for _ in range(repeat):
+        driver.get(match_link)
+        try:
+          WebDriverWait(driver, odds_timeout).until(EC.element_to_be_clickable((By.CLASS_NAME, "match-bet-item-odds")))
+          break
+        except:
+          print("odds not found")
+    else:
+      driver.get(match_link)
     return driver.page_source
   
-  if odds_timeout < 5 or not use_HTMLSession:
-    web_session = requests.Session()
-    response = web_session.get(match_link).text
-    return response
-  
-  try:
-    nest_asyncio.apply()
-    s = AsyncHTMLSession()
-    response = await s.get(match_link)
-    await response.html.arender(wait=3, sleep=3)
-    return response.html.html
-  except Exception as e:
-    print(e)
-    web_session = requests.Session()
-    response = web_session.get(match_link).text
-    return response
+  web_session = requests.Session()
+  response = web_session.get(match_link).text
+  return response
 
 def get_code(link):
   split_link = link.split("/")
@@ -442,16 +430,14 @@ def get_odds_from_match_page(soup):
   return t1oo, t2oo
 
 def get_team_names_from_match_page(soup):
-  names = soup.find_all("span", class_="match-bet-item-team")
+  names = soup.find_all("div", class_="wf-title-med")
   if len(names) != 2:
-    names = soup.find_all("div", class_="wf-title-med")
+    names = soup.find_all("div", class_="wf-title-med mod-single")
     if len(names) != 2:
-      names = soup.find_all("div", class_="wf-title-med ")
+      names = soup.find_all("span", class_="match-bet-item-team")
       if len(names) != 2:
-        names = soup.find_all("div", class_="wf-title-med mod-single")
-        if len(names) != 2:
-          print(f"team names not found, names: {names}")
-          return None, None
+        print(f"team names not found, names: {names}")
+        return None, None
   
   t1_name = names[0].get_text().strip()
   t2_name = names[1].get_text().strip()
