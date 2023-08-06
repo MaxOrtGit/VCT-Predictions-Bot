@@ -89,35 +89,38 @@ async def send_match_list_embedded(embed_title, matches, bot, sender, followup=F
     
 
 async def send_bet_list_embedded(embed_title, bets, bot, sender, followup=False, ephemeral=False, user=None):
-  bets.sort(key=lambda x: x.match.date_created)
   bets.sort(key=lambda x: x.user.balances[-1][1], reverse=True)
   bets.sort(key=lambda x: x.hidden)
+  bets.sort(key=lambda x: x.match.date_created)
   
-  hidden_bets = []
+  match_bets = [(bet.match, bet) for bet in bets]
+  
+  hidden_match_bets = []
   if user is not None:
-    for bet in bets:
-      if bet.hidden and user.code == bet.user_id:
-        hidden_bets.append(bet)
+    for match_bet in match_bets:
+      if match_bet[1].hidden and user.code == match_bet[1].user_id:
+        hidden_match_bets.append(match_bet)
   
-  await send_visible_hidden_bet_list_embedded(False, embed_title, bets, bot, sender, followup=followup, ephemeral=ephemeral)
-  if len(hidden_bets) > 0:
-    await send_visible_hidden_bet_list_embedded(True, embed_title, hidden_bets, bot, sender, followup=True, ephemeral=True)
+  await send_visible_hidden_bet_list_embedded(False, embed_title, match_bets, bot, sender, followup=followup, ephemeral=ephemeral)
+  if len(hidden_match_bets) > 0:
+    await send_visible_hidden_bet_list_embedded(True, embed_title, hidden_match_bets, bot, sender, followup=True, ephemeral=True)
         
 # should only be used in send_bet_list_embedded
-async def send_visible_hidden_bet_list_embedded(show_hidden, embed_title, bets, bot, sender, followup=False, ephemeral=False):
+async def send_visible_hidden_bet_list_embedded(show_hidden, embed_title, match_bets, bot, sender, followup=False, ephemeral=False):
   from views import BetListView
+  print(match_bets)
   follow = followup
-  if len(bets) > limit:
-    while len(bets) > 0:
-      await send_bet_list_embedded(embed_title, bets[:limit], bot, sender, followup=follow, ephemeral=ephemeral)
+  if len(match_bets) > limit:
+    while len(match_bets) > 0:
+      await send_bet_list_embedded(embed_title, match_bets[:limit], bot, sender, followup=follow, ephemeral=ephemeral)
       follow = True
-      bets = bets[limit:]
+      match_bets = match_bets[limit:]
     return  
     
-  if len(bets) == 0:
+  if len(match_bets) == 0:
     args = {"content": "No undecided bets.", "ephemeral": True}
   else:
-    embed = create_bet_list_embedded("Bets:", bets, show_hidden)
+    embed = create_bet_list_embedded("Bets:", match_bets, show_hidden)
     args = {"embed": embed, "view": BetListView(bot), "ephemeral": ephemeral}
   
   await send_msg(sender, follow, **args)
@@ -179,23 +182,27 @@ def create_bet_embedded(bet: Bet, title):
   return embed
 
 
-def create_bet_list_embedded(embed_title, bets, show_hidden):
-  if bets is None:
+def create_bet_list_embedded(embed_title, match_bets, show_hidden):
+  if match_bets is None:
     return None
 
   embed = discord.Embed(title=embed_title, color=discord.Color.blue())
 
-  
-  for bet in bets:
+  last_match_id = None
+  for match, bet in match_bets:
+    name = ""
+    if match.code != last_match_id:
+      name = f"{match.t1} vs {match.t2}, Odds: {match.t1o} / {match.t2o}"
+      last_match_id = match.code
     if bet.hidden and (show_hidden == False):
-      embed.add_field(name=f"{bet.user.username}'s Hidden Bet on {bet.t1} vs {bet.t2}", value=f"Teams: {bet.t1} vs {bet.t2}", inline=False)
+      embed.add_field(name=name, value=f"{bet.user.username}'s Hidden Bet", inline=False)
     else:
       team = bet.get_team()
-      text = f" Bet on {bet.t1} vs {bet.t2}"
+      pref = ""
       if bet.hidden:
-        text = " Hidden" + text
-      text = f"{bet.user.username}'s" + text
-      embed.add_field(name=text, value=f"Team: {team}, Amount: {bet.amount_bet}, Payout on Win: {int(math.floor(bet.get_payout()))}", inline=False)
+        pref = "Hidden"
+      pref = f"{bet.user.username}'s " + pref
+      embed.add_field(name=name, value=f"{pref} Bet Team: {team}, Amount: {bet.amount_bet}, Payout on Win: {int(math.floor(bet.get_payout()))}", inline=False)
   return embed
 
 def create_user_embedded(user:User, session=None):
