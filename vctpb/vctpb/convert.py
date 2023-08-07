@@ -396,7 +396,9 @@ async def edit_all_messages(bot, ids, embedd, view : int | discord.ui.View | Non
       msg = await channel.fetch_message(id[0])
       title = msg.embeds[0].title.split(":")[0]
       try:
-        new_title = embedd.title.split(":")[1]
+        # split title by : and add all after first :
+        new_title = embedd.title.split(":")[1:]
+        new_title = ":".join(new_title)
         title = title + ":" + new_title
       except:
         title = msg.embeds[0].title

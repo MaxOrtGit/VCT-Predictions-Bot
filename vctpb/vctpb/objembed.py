@@ -29,7 +29,6 @@ def get_match_title(match:Match):
 
 def create_match_embedded(match:Match, title):
   title = f"{title}: {get_match_title(match)}"
-  print(title)
   embed = discord.Embed(title=title, color=discord.Color.from_rgb(*hex_to_tuple(match.color_hex)))
   embed.add_field(name="Teams:", value=f"{match.t1} vs {match.t2}", inline=True)
   embed.add_field(name="Odds:", value=str(match.t1o) + " / " + str(match.t2o), inline=True)
