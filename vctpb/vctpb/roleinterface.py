@@ -30,3 +30,14 @@ async def rename_role(role, new_name):
   
 def has_role(role, member):
   return role in member.roles
+
+async def create_predictions_manager_role(guild):
+  if get_role(guild, "Predictions Manager") is None:
+    return await create_role(guild, "Predictions Manager", "9950E0")
+
+async def has_pm_role(ctx):
+  if has_role(get_role(ctx.guild, "Predictions Manager"), ctx.author):
+    return True
+  else:
+    await ctx.respond("You do not have the Predictions Manager role.", ephemeral=True)
+    return False

@@ -57,13 +57,12 @@ from savedata import backup_full
 import secrets
 import atexit
 from autocompletes import *
-from vlrinterface import get_match_link, make_data_embed
-
-from vlrinterface import generate_matches_from_vlr, get_code, generate_tournament, get_match_response
+from vlrinterface import generate_matches_from_vlr, get_code, generate_tournament, get_match_response, get_match_link, make_data_embed, generate_team
 from sqlaobjs import Session, mapper_registry, Engine
 from utils import *
 from modals import MatchCreateModal, MatchEditModal, BetCreateModal, BetEditModal
 from views import *
+from roleinterface import create_predictions_manager_role, has_pm_role
 # issue with Option in command function
 # pyright: reportGeneralTypeIssues=false
 
@@ -196,6 +195,7 @@ async def on_ready():
   bot.add_view(MatchListView(bot, None))
   bot.add_view(AvailableMatchListView(bot, None))
   bot.add_view(BetListView(bot))
+  
   print("\n-----------Bot Started-----------\n")
 
 
@@ -244,6 +244,7 @@ assign = SlashCommandGroup(
 #assign matches start
 @assign.command(name = "matches", description = "Where the end matches show up.")
 async def assign_matches(ctx):
+  if not await has_pm_role(ctx): return
   set_channel_in_db("match", ctx.channel.id)
   
   await ctx.respond(f"<#{ctx.channel.id}> is now the match list channel.")
@@ -252,6 +253,7 @@ async def assign_matches(ctx):
 #assign bets start
 @assign.command(name = "bets", description = "Where the end bets show up.")
 async def assign_bets(ctx):
+  if not await has_pm_role(ctx): return
   set_channel_in_db("bet", ctx.channel.id)
   await ctx.respond(f"<#{ctx.channel.id}> is now the bet list channel.")
 #assign bets end
@@ -259,6 +261,7 @@ async def assign_bets(ctx):
 #assign results start
 @assign.command(name = "results", description = "Where the end results show up.")
 async def assign_results(ctx):
+  if not await has_pm_role(ctx): return
   set_channel_in_db("result", ctx.channel.id)
   await ctx.respond(f"<#{ctx.channel.id}> is now the result list channel.")
 #assign results end
@@ -281,7 +284,7 @@ async def award_give(ctx,
   amount: Option(int, "Amount you want to give or take."), description: Option(str, "Unique description of why the award is given."),
   user: Option(discord.Member, "User you wannt to award. (Can't use with users).", default = None, required = False),  
   users: Option(str, "Users you want to award. (Can't use with user).", autocomplete=multi_user_list_autocomplete, default = None, required = False)):
-  
+  if not await has_pm_role(ctx): return
   if (user is not None) and (users is not None):
     await ctx.respond("You can't use compare and user at the same time.", ephemeral = True)
     return
@@ -340,7 +343,7 @@ async def award_list(ctx, user: Option(discord.Member, "User you want to list aw
 #award rename start
 @award.command(name = "rename", description = """Renames an award.""")
 async def award_rename(ctx, user: Option(discord.Member, "User you want to award"), award: Option(str, "Description of award you want to rename.", autocomplete=user_awards_autocomplete), description: Option(str, "Unique description of why the award is given.")):
-  
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (user := await get_user_from_ctx(ctx, user, session)) is None: return
     
@@ -378,6 +381,7 @@ async def award_rename(ctx, user: Option(discord.Member, "User you want to award
 #award reaward start
 @award.command(name = "reaward", description = """Changes the amount of an award.""")
 async def award_rename(ctx, user: Option(discord.Member, "User you want to award"), award: Option(str, "Description of award you want to reaward.", autocomplete=user_awards_autocomplete), amount: Option(str, "New Amount.")):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     amount = to_digit(amount)
     if amount is None:
@@ -932,6 +936,7 @@ async def leaderboard(ctx):
 #log start
 @bot.slash_command(name = "log", description = "Shows the last x amount of balance changes (awards, bets, etc)", guild_ids = gid)
 async def log(ctx, amount: Option(int, "How many balance changes you want to see."), user: Option(discord.Member, "User you want to check log of (defaulted to you).", default = None, required = False)):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (user := await get_user_from_ctx(ctx, user, session)) is None: return
     
@@ -1017,6 +1022,7 @@ generatescg = SlashCommandGroup(
 #generate matches start
 @generatescg.command(name = "matches", description = "Generates matches for the current tournaments.")
 async def generate_matches(ctx):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (len(get_active_tournaments(session)) == 0):
       await ctx.respond("There is no current tournament.", ephemeral = True)
@@ -1091,6 +1097,7 @@ async def match_bets(ctx, match: Option(str, "Match you want bets of.", autocomp
 #match open start
 @matchscg.command(name = "open", description = "Open a match.")
 async def match_open(ctx, match: Option(str, "Match you want to open.", autocomplete=match_close_list_autocomplete)):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (match := await obj_from_autocomplete_tuple(ctx, get_closed_matches(session), match, "Match", session)) is None: return
     await match.open(bot, session, ctx)
@@ -1101,6 +1108,7 @@ async def match_open(ctx, match: Option(str, "Match you want to open.", autocomp
 #balance_odds: Option(int, "Balance the odds? Defualt is Yes.", choices = yes_no_choices, default=1, required=False)
 @matchscg.command(name = "close", description = "Close a match.")
 async def match_close(ctx, match: Option(str, "Match you want to close.", autocomplete=match_open_list_autocomplete)):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (match := await obj_from_autocomplete_tuple(ctx, get_open_matches(session), match, "Match", session)) is None: return
     if match.date_closed != None:
@@ -1112,6 +1120,7 @@ async def match_close(ctx, match: Option(str, "Match you want to close.", autoco
 #match create start
 @matchscg.command(name = "create", description = "Create a match.")
 async def match_create(ctx):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     match_modal = MatchCreateModal(session, title="Create Match", bot=bot)
     await ctx.interaction.response.send_modal(match_modal)
@@ -1153,6 +1162,7 @@ async def match_create(ctx):
 #match generate start
 @matchscg.command(name = "generate", description = "Generates a match from a vlr link.")
 async def match_new_generate(ctx, vlr_link: Option(str, "Link of vlr match.")):
+  if not await has_pm_role(ctx): return
   vlr_code = get_code(vlr_link)
   with Session.begin() as session:
     if (match := get_match_from_vlr_code(vlr_code, session)) is not None:
@@ -1181,6 +1191,7 @@ async def match_new_generate(ctx, vlr_link: Option(str, "Link of vlr match.")):
 #match delete start
 @matchscg.command(name = "delete", description = "Delete a match. Can only be done if betting is open.")
 async def match_delete(ctx, match: Option(str, "Match you want to delete.", autocomplete=match_current_list_autocomplete)):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (nmatch := await obj_from_autocomplete_tuple(ctx, get_current_matches(session), match, "Match", session)) is None:
       await ctx.respond(f'Match "{match}" not found.', ephemeral = True)
@@ -1215,6 +1226,7 @@ async def match_find(ctx, match: Option(str, "Match you want embed of.", autocom
 #match edit start
 @matchscg.command(name = "edit", description = "Edit a match.")
 async def match_edit(ctx, match: Option(str, "Match you want to edit.", autocomplete=match_list_autocomplete), balance_odds: Option(int, "balance the odds? Defualt is Yes.", choices = yes_no_choices, default=1, required=False)):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (nmatch := await obj_from_autocomplete_tuple(None, get_open_matches(session), match, "Match", session)) is None:
       if (nmatch := await obj_from_autocomplete_tuple(ctx, get_all_db("Match", session), match, "Match", session)) is None: 
@@ -1255,6 +1267,7 @@ async def match_list(ctx, type: Option(int, "If type is full it sends the whole 
 #match winner start
 @matchscg.command(name = "winner", description = "Set winner of match.")
 async def match_winner(ctx, match: Option(str, "Match you want to set winner of.", autocomplete=match_current_list_autocomplete), team: Option(str, "Team to set to winner.", autocomplete=match_team_list_autocomplete)):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (nmatch := await obj_from_autocomplete_tuple(ctx, get_current_matches(session), match, "Match", session)) is None:
       await ctx.respond(f'Match "{match}" not found.', ephemeral = True)
@@ -1270,6 +1283,7 @@ async def match_winner(ctx, match: Option(str, "Match you want to set winner of.
 #match reset start
 @matchscg.command(name = "reset", description = "Change winner or go back to no winner.")
 async def match_winner(ctx, match: Option(str, "Match you want to reset winner of."), team: Option(str, "Team to set to winner.", autocomplete=match_reset_winner_list_autocomplete), new_date: Option(int, "Do you want to reset the winner set date?", choices = yes_no_choices)):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (nmatch := await obj_from_autocomplete_tuple(ctx, get_all_db("Match", session), match, "Match", session)) is None:
       await ctx.respond(f'Match "{match}" not found.', ephemeral = True)
@@ -1355,6 +1369,7 @@ async def match_winner(ctx, match: Option(str, "Match you want to reset winner o
 #match send_warning start
 @matchscg.command(name = "send_warning", description = "Send warning to users who have not bet on a match.")
 async def match_send_warning(ctx, match: Option(str, "Match you want to send warning of.", autocomplete=match_list_autocomplete)):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (nmatch := await obj_from_autocomplete_tuple(None, get_open_matches(session), match, "Match", session)) is None:
       if (nmatch := await obj_from_autocomplete_tuple(ctx, get_all_db("Match", session), match, "Match", session)) is None: 
@@ -1372,6 +1387,7 @@ bot.add_application_command(matchscg)
 #backup start
 @bot.slash_command(name = "backup", description = "Backup the database.")
 async def backup(ctx):
+  if not await has_pm_role(ctx): return
   backup_full()
   await ctx.respond("Backup complete.", ephemeral = True)
 #backup end
@@ -1380,6 +1396,7 @@ async def backup(ctx):
 #hidden command
 @bot.slash_command(name = "hide_from_leaderboard", description = "Do not user command if not Pig, Hides you from alot of interations.")
 async def hide_from_leaderboard(ctx):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (user := await get_user_from_ctx(ctx, ctx.author, session)) is None: return
     user.hidden = not user.hidden
@@ -1407,11 +1424,11 @@ async def do_tournament_alert(ctx, tournament):
       await ctx.respond(f"You are removed from alerts for {tournament.name}.", ephemeral = True)
 
 #alert tournament start
-@alertscg.command(name = "tournament", description = "Toggle alert when a match in tournament is about to close.")
-async def alert_tournament(ctx, tournament: Option(str, "Tournament you want to toggle alerts for.", autocomplete = tournament_autocomplete)):
-  await do_tournament_alert(ctx, tournament)
-
-bot.add_application_command(alertscg)
+#@alertscg.command(name = "tournament", description = "Toggle alert when a match in tournament is about to close.")
+#async def alert_tournament(ctx, tournament: Option(str, "Tournament you want to toggle alerts for.", autocomplete = tournament_autocomplete)):
+#  await do_tournament_alert(ctx, tournament)
+#
+#bot.add_application_command(alertscg)
 #alert end
 
 #tournament start 
@@ -1430,6 +1447,7 @@ async def tournament_alert(ctx, tournament: Option(str, "Tournament you want to 
 #tournament start start
 @tournamentsgc.command(name = "start", description = "Startes a tournament. Pick one color to fill")
 async def tournament_start(ctx, vlr_link: Option(str, "VLR link of tournament.")):
+  if not await has_pm_role(ctx): return
   code = get_code(vlr_link)
   if code is None:
     await ctx.respond("Invalid VLR link.", ephemeral = True)
@@ -1447,6 +1465,7 @@ async def tournament_start(ctx, vlr_link: Option(str, "VLR link of tournament.")
 #tournament delete start
 @tournamentsgc.command(name = "delete", description = "Deletes a tournament.")
 async def tournament_delete(ctx, name: Option(str, "Name of tournament.", autocomplete=tournament_autocomplete)):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (tournament := await obj_from_autocomplete_tuple(ctx, get_all_db("Tournament", session), name, "Tournament", session)) is None:
       await ctx.respond(f'Tournament "{name}" not found.', ephemeral = True)
@@ -1490,6 +1509,7 @@ async def tournament_recolor(ctx, name: Option(str, "Name of tournament.", autoc
                            xkcd_color_name: Option(str, "Name of color you want to add.", autocomplete=xkcd_picker_autocomplete, required=False),
                            color_name:Option(str, "Name of color you want to add.", autocomplete=color_picker_autocomplete, required=False), 
                            hex: Option(str, "Hex color code of new color. The 6 numbers/letters.", required=False)):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (tournament := await obj_from_autocomplete_tuple(ctx, get_all_db("Tournament", session), name, "Tournament", session)) is None:
       await ctx.respond(f'Tournament "{name}" not found.', ephemeral = True)
@@ -1508,6 +1528,7 @@ async def tournament_recolor(ctx, name: Option(str, "Name of tournament.", autoc
 @tournamentsgc.command(name = "rename", description = "Renames a tournament.")
 async def tournament_rename(ctx, name: Option(str, "Name of tournament.", autocomplete=tournament_autocomplete),
                             new_name: Option(str, "New name of tournament.")):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (tournament := await obj_from_autocomplete_tuple(ctx, get_all_db("Tournament", session), name, "Tournament", session)) is None:
       await ctx.respond(f'Tournament "{name}" not found.', ephemeral = True)
@@ -1535,6 +1556,7 @@ async def tournament_find(ctx, name: Option(str, "Name of tournament.", autocomp
 #tournament activate start
 @tournamentsgc.command(name = "activate", description = "Activates a tournament.")
 async def tournament_activate(ctx, name: Option(str, "Name of tournament.", autocomplete=tournament_inactive_autocomplete)):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (tournament := await obj_from_autocomplete_tuple(ctx, get_inactive_tournaments(session), name, "Tournament", session)) is None:
       await ctx.respond(f'Tournament "{name}" not found.', ephemeral = True)
@@ -1550,6 +1572,7 @@ async def tournament_activate(ctx, name: Option(str, "Name of tournament.", auto
 #tournament deactivate start
 @tournamentsgc.command(name = "deactivate", description = "Deactivates a tournament.")
 async def tournament_deactivate(ctx, name: Option(str, "Name of tournament.", autocomplete=tournament_active_autocomplete)):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (tournament := await obj_from_autocomplete_tuple(ctx, get_active_tournaments(session), name, "Tournament", session)) is None:
       await ctx.respond(f'Tournament "{name}" not found.', ephemeral = True)
@@ -1566,6 +1589,7 @@ async def tournament_deactivate(ctx, name: Option(str, "Name of tournament.", au
 @tournamentsgc.command(name = "link", description = "Links a tournament to a vlr code.")
 async def tournament_link(ctx, name: Option(str, "Name of tournament.", autocomplete=tournament_autocomplete),
                           vlr_link: Option(str, "VLR link of tournament.")):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (tournament := await obj_from_autocomplete_tuple(ctx, get_all_db("Tournament", session), name, "Tournament", session)) is None:
       await ctx.respond(f'Tournament "{name}" not found. To start a tournament do /tournament start.', ephemeral = True)
@@ -1582,6 +1606,7 @@ async def tournament_link(ctx, name: Option(str, "Name of tournament.", autocomp
 #tournament create_role start
 @tournamentsgc.command(name = "create_role", description = "Creates a role for a tournament.")
 async def tournament_create_role(ctx, name: Option(str, "Name of tournament.", autocomplete=tournament_autocomplete)):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (tournament := await obj_from_autocomplete_tuple(ctx, get_all_db("Tournament", session), name, "Tournament", session)) is None:
       await ctx.respond(f'Tournament "{name}" not found.', ephemeral = True)
@@ -1596,6 +1621,7 @@ bot.add_application_command(tournamentsgc)
 #tournament delete_role start
 @tournamentsgc.command(name = "delete_role", description = "Deletes a role for a tournament.")
 async def tournament_delete_role(ctx, name: Option(str, "Name of tournament.", autocomplete=tournament_autocomplete)):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (tournament := await obj_from_autocomplete_tuple(ctx, get_all_db("Tournament", session), name, "Tournament", session)) is None:
       await ctx.respond(f'Tournament "{name}" not found.', ephemeral = True)
@@ -1616,6 +1642,7 @@ teamsgc = SlashCommandGroup(
 #team generate start
 @teamsgc.command(name = "generate", description = "Generate a team or updates a prexisting team.")
 async def team_generate(ctx, vlr_link: Option(str, "Link of vlr tournament.")):
+  if not await has_pm_role(ctx): return
   code = get_code(vlr_link)
   if code is None:
     await ctx.respond("Not a valid team link.", ephemeral = True)
@@ -1628,7 +1655,8 @@ async def team_generate(ctx, vlr_link: Option(str, "Link of vlr tournament.")):
 
 #team update start
 @teamsgc.command(name = "update", description = "Updates a team's name and vlr code.")
-async def team_generate(ctx, team: Option(str, "Name of team.", autocomplete=team_autocomplete),):
+async def team_generate(ctx, team: Option(str, "Name of team.", autocomplete=team_autocomplete)):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (team := await obj_from_autocomplete_tuple(ctx, get_all_db("Team", session), team, "Team", session)) is None: return
     if team.vlr_code is None:
@@ -1655,6 +1683,7 @@ async def team_generate(ctx):
 @teamsgc.command(name = "merge", description = "Merge two teams.")
 async def team_merge(ctx, new: Option(str, "Team to keep.", autocomplete=team_autocomplete),
                      old: Option(str, "Team to merge into other team.", autocomplete=team_autocomplete)):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (t1 := await obj_from_autocomplete_tuple(ctx, get_all_db("Team", session), new, "Team", session)) is None: return
     if (t2 := await obj_from_autocomplete_tuple(ctx, get_all_db("Team", session), old, "Team", session)) is None: return
@@ -1676,6 +1705,7 @@ async def team_recolor(ctx, name: Option(str, "Name of team.", autocomplete=team
                            xkcd_color_name: Option(str, "Name of color you want to add.", autocomplete=xkcd_picker_autocomplete, required=False),
                            color_name: Option(str, "Name of color you want to add.", autocomplete=color_picker_autocomplete, required=False), 
                            hex: Option(str, "Hex color code of new color. The 6 numbers/letters.", required=False)):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     if (team := await obj_from_autocomplete_tuple(ctx, get_all_db("Team", session), name, "Team", session)) is None: return
     
@@ -1719,6 +1749,7 @@ seasonsgc = SlashCommandGroup(
 #season start start
 @seasonsgc.command(name = "start", description = "Do not user command if not Pig, Start a new season.")
 async def season_start(ctx, name: Option(str, "Name of new season.")):
+  if not await has_pm_role(ctx): return
   # to do make the command also include season name
   with Session.begin() as session:
     users = get_all_db("User", session)
@@ -1737,6 +1768,7 @@ async def season_start(ctx, name: Option(str, "Name of new season.")):
 #season rename start
 @seasonsgc.command(name = "rename", description = "Rename season.")
 async def season_rename(ctx, season: Option(str, "Description of award you want to rename.", autocomplete=seasons_autocomplete), name: Option(str, "Name of new season.")):
+  if not await has_pm_role(ctx): return
   
   with Session.begin() as session:
     found = False
@@ -1757,6 +1789,7 @@ bot.add_application_command(seasonsgc)
 #update_bets start
 @bot.slash_command(name = "update_bets", description = "Do not user command if not Pig, Debugs some stuff.")
 async def update_bets(ctx):
+  if not await has_pm_role(ctx): return
   with Session.begin() as session:
     for bets in get_all_db("Bet", session):
       match = bets.match
@@ -1770,6 +1803,8 @@ async def update_bets(ctx):
 #debug command
 @bot.slash_command(name = "check_balance_order", description = "Do not user command if not Pig, Debugs some stuff.")
 async def check_balance_order(ctx):
+  if not await has_pm_role(ctx): return
+  
   #check if the order of user balance and the order of time in balances[2] are the same
   users = get_all_db("User")
   for user in users:
@@ -1785,6 +1820,7 @@ async def check_balance_order(ctx):
 #clean db start
 @bot.slash_command(name = "clean_db", description = "Do not user command if not Pig, Debugs some stuff.")
 async def clean_db(ctx):
+  if not await has_pm_role(ctx): return
   await ctx.respond(f"cleaning db.")
   with Session.begin() as session:
     bets = get_all_db("Bet", session)
@@ -1793,6 +1829,15 @@ async def clean_db(ctx):
       bet.t1 = match.t1
       bet.t2 = match.t2
   print(f"clean db done by {ctx.author.name} ")
+
+#create_manager start
+@bot.slash_command(name = "create_manager", description = "Do not user command if not Pig, Debugs some stuff.")
+async def create_manager(ctx):
+  role = await create_predictions_manager_role(ctx.guild)
+  if role is None:
+    await ctx.respond("Role already exists.", ephemeral = True)
+  else:
+    await ctx.respond("Role created.", ephemeral = True)
 
 token = get_setting("discord_token")
 #print(f"discord: {token}")
