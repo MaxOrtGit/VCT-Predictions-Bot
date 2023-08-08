@@ -30,11 +30,12 @@ from selenium.webdriver.support import expected_conditions as EC
 
 def start_selenium():
   global driver
-  global wait
   try:
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument("headless")
     chromedriver_path  = get_setting("chromedriver_path")
+    if driver is not None:
+      driver.quit()
     if chromedriver_path is None:
       driver = webdriver.Chrome(options=chrome_options)
     else:
@@ -45,7 +46,6 @@ def start_selenium():
     print(e)
     print("selenium not installed properly, using requests instead (no odds)")
     driver = None
-    wait = None
 start_selenium()
 
 t1_odds_labels = ["match-bet-item-odds mod-1", "match-bet-item-odds mod- mod-1"]
