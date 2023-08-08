@@ -63,7 +63,7 @@ def create_match_embedded(match:Match, title):
   return embed
 
 limit = 20
-async def send_match_list_embedded(embed_title, matches, bot, sender, followup=False, ephemeral=False, view:int | discord.ui.View=-1, hex=None):
+async def send_match_list_embedded(embed_title, matches, bot, sender, followup=False, ephemeral=False, view:int | discord.ui.View=-1, hex=None, content=None):
   from views import MatchListView
   follow = followup
   if len(matches) > limit:
@@ -85,6 +85,8 @@ async def send_match_list_embedded(embed_title, matches, bot, sender, followup=F
     args["view"] = view
   else:
     args["view"] = MatchListView(bot, matches)
+  if content is not None:
+    args["content"] = content
   await send_msg(sender, follow, **args)
     
 async def send_bet_list_embedded(embed_title, bets, bot, sender, followup=False, ephemeral=False, user=None):
@@ -105,8 +107,8 @@ async def send_bet_list_embedded(embed_title, bets, bot, sender, followup=False,
           team = bet.get_team()
           pref = ""
           if bet.hidden:
-            pref = "Hidden"
-          pref = f"{bet.user.username}'s " + pref
+            pref = " Hidden"
+          pref = f"{bet.user.username}'s" + pref
           bet_text += f"{pref} Bet Team: {team}, Amount: {bet.amount_bet}, Payout on Win: {int(math.floor(bet.get_payout()))}\n"
       embed.add_field(name=name, value=bet_text, inline=False)
     return embed
