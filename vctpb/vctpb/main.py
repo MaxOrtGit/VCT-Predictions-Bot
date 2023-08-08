@@ -1183,7 +1183,7 @@ async def match_new_generate(ctx, vlr_link: Option(str, "Link of vlr match.")):
       
       await gen_msg.edit_original_response(content = "", embed=data_embed, view=GenerateMatchView(bot))
     except Exception as e:
-      await gen_msg.edit_original_response(content = f"An error occurred. @rpowerpig with this error code: {e}")
+      await gen_msg.edit_original_response(content = f"An error occurred. @rpowerpig")
       raise e
 #match generate end
       
