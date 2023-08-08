@@ -22,26 +22,30 @@ from utils import get_random_hex_color, balance_odds, mix_colors, get_date, to_f
 import discord
 from roleinterface import get_role
 
-try:
-  #import webdriver, WebDriverWait, By, and EC
-  from selenium import webdriver
-  from selenium.webdriver.support.ui import WebDriverWait
-  from selenium.webdriver.common.by import By
-  from selenium.webdriver.support import expected_conditions as EC
-  chrome_options = webdriver.ChromeOptions()
-  chrome_options.add_argument("headless")
-  chromedriver_path  = get_setting("chromedriver_path")
-  if chromedriver_path is None:
-    driver = webdriver.Chrome(options=chrome_options)
-  else:
-    from selenium.webdriver.chrome.service import Service
-    service = Service(chromedriver_path)
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-except Exception as e:
-  print(e)
-  print("selenium not installed properly, using requests instead (no odds)")
-  driver = None
-  wait = None
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+
+
+def start_selenium():
+  global driver
+  global wait
+  try:
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument("headless")
+    chromedriver_path  = get_setting("chromedriver_path")
+    if chromedriver_path is None:
+      driver = webdriver.Chrome(options=chrome_options)
+    else:
+      from selenium.webdriver.chrome.service import Service
+      service = Service(chromedriver_path)
+      driver = webdriver.Chrome(service=service, options=chrome_options)
+  except Exception as e:
+    print(e)
+    print("selenium not installed properly, using requests instead (no odds)")
+    driver = None
+    wait = None
   
 
 t1_odds_labels = ["match-bet-item-odds mod-1", "match-bet-item-odds mod- mod-1"]
@@ -68,7 +72,11 @@ async def get_match_response(match_link, odds_timeout=4, repeat=3):
   if driver is not None:
     if odds_timeout != 0:
       for _ in range(repeat):
-        driver.get(match_link)
+        try:
+          driver.get(match_link)
+        except:
+          start_selenium()
+          driver.get(match_link)
         try:
           WebDriverWait(driver, odds_timeout).until(EC.element_to_be_clickable((By.CLASS_NAME, "match-bet-item-odds")))
           break
