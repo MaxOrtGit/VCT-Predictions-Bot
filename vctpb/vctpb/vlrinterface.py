@@ -27,6 +27,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 
+driver = None
 
 def start_selenium():
   global driver
@@ -45,6 +46,8 @@ def start_selenium():
   except Exception as e:
     print(e)
     print("selenium not installed properly, using requests instead (no odds)")
+    if driver is not None:
+      driver.quit()
     driver = None
 start_selenium()
 
