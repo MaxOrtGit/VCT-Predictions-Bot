@@ -35,6 +35,8 @@ def start_selenium():
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument("headless")
     chromedriver_path  = get_setting("chromedriver_path")
+    if driver is not None:
+      driver.quit()
     if chromedriver_path is None:
       driver = webdriver.Chrome(options=chrome_options)
     else:
