@@ -46,7 +46,7 @@ def start_selenium():
     print("selenium not installed properly, using requests instead (no odds)")
     driver = None
     wait = None
-  
+start_selenium()
 
 t1_odds_labels = ["match-bet-item-odds mod-1", "match-bet-item-odds mod- mod-1"]
 t2_odds_labels = ["match-bet-item-odds mod-2", "match-bet-item-odds mod- mod-2"]
