@@ -20,6 +20,7 @@ from dbinterface import get_channel_from_db, get_from_db, add_to_db, get_unique_
 from autocompletes import get_team_from_vlr_code, get_match_from_vlr_code, get_tournament_from_vlr_code
 from utils import get_random_hex_color, balance_odds, mix_colors, get_date, to_float, to_digit, tuple_to_hex
 import discord
+from roleinterface import get_role
 
 try:
   #import webdriver, WebDriverWait, By, and EC
@@ -564,7 +565,13 @@ async def generate_matches_from_vlr(bot, session=None, reply_if_none=True):
   
   if match_channel is not None:
     if len(matches) != 1 and (reply_if_none or len(matches) != 0):
-      await send_match_list_embedded(f"Generated Matches", matches, bot, match_channel)
+      tournaments = set([match.tournament_name for match in matches])
+      pings = ""
+      for tournament in tournaments:
+        role = get_role(match_channel.guild, f"{tournament} Alert")
+        if role is not None:
+          pings += f" {role.mention}"
+      await send_match_list_embedded(f"Generated Matches", matches, bot, match_channel, content=f"Generated Matches {pings}")
 
 
 async def get_or_create_tournament(tournament_name, tournament_vlr_code, guild, session, activate_on_create=True):

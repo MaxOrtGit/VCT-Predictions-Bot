@@ -87,9 +87,9 @@ class Match():
     users = self.tournament.alert_users
     embedd = create_match_embedded(self, f"Last chance for Match")
     pings = f"Last chance for Match: {get_match_title(self)}"
-    role = get_role(match_channel.guild, f"{self.tournament_name} Alert")
-    if role is not None:
-      pings += f" {role.mention}"
+    #role = get_role(match_channel.guild, f"{self.tournament_name} Alert")
+    #if role is not None:
+    #  pings += f" {role.mention}"
     
     msg = await match_channel.send(content=pings, embed=embedd, view=MatchView(bot, self))
     await self.message_ids.append(msg)
