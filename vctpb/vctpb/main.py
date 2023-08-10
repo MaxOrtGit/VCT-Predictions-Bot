@@ -977,7 +977,8 @@ async def loan_create(ctx):
       return
     
     user.loans.append((50, get_date(), None))
-    await ctx.respond(f"{user.username} has been loaned 50")
+    embed = create_user_embedded(user, session)
+    await ctx.respond(f"You have been loaned 50", embed=embed, ephemeral = True)
 #loan create end
 
   
