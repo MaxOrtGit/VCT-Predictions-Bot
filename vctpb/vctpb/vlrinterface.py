@@ -551,7 +551,7 @@ async def generate_matches_from_vlr(bot, session=None, reply_if_none=True):
     with Session.begin() as session:
       return await generate_matches_from_vlr(bot, session, reply_if_none)
   from objembed import create_match_embedded
-  from views import MatchView
+  from views import MatchView, AvailableMatchListView
   
   tournaments = get_active_tournaments(session)
   
@@ -582,7 +582,7 @@ async def generate_matches_from_vlr(bot, session=None, reply_if_none=True):
         role = get_role(match_channel.guild, f"{tournament} Alert")
         if role is not None:
           pings += f" {role.mention}"
-      await send_match_list_embedded(f"Generated Matches", matches, bot, match_channel, content=f"Generated Matches {pings}")
+      await send_match_list_embedded(f"Generated Matches", matches, bot, match_channel, content=f"Generated Matches {pings}", view=AvailableMatchListView(bot, matches))
 
 
 async def get_or_create_tournament(tournament_name, tournament_vlr_code, guild, session, activate_on_create=True):

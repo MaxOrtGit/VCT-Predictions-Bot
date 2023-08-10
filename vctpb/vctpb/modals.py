@@ -534,7 +534,11 @@ class BetEditModal(Modal):
       if not bet.hidden:
         title = f"Edit Bet"
         embedd = create_bet_embedded(bet, title)
-        msg = await interaction.response.send_message(embed=embedd, view=BetView(self.bot, bet))
+        if (channel := await self.bot.fetch_channel(get_channel_from_db("bet", session))) == interaction.channel:
+          msg = await interaction.response.send_message(embed=embedd, view=BetView(self.bot, bet))
+        else:
+          await interaction.response.send_message(f"Bet edit sent in {channel.mention}.", ephemeral=True)
+          msg = await channel.send(embed=embedd, view=BetView(self.bot, bet))
         await bet.message_ids.append(msg)
         
       if self.hide:
