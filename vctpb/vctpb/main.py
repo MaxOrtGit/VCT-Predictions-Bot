@@ -1045,7 +1045,7 @@ matchscg = SlashCommandGroup(
 )
 
 #match bets start
-@matchscg.command(name = "bets", description = "What bets.")
+@matchscg.command(name = "bets", description = "Lists all bets of a match.")
 async def match_bets(ctx, match: Option(str, "Match you want bets of.", autocomplete=match_list_autocomplete), type: Option(int, "If type is full it sends the whole embed of each match.", choices = list_choices, default = 0, required = False), show_hidden: Option(int, "Show your hidden bets? Defualt is Yes.", choices = yes_no_choices, default = 1, required = False)):
   with Session.begin() as session:
     if (nmatch := await obj_from_autocomplete_tuple(None, get_current_matches(session), match, "Match", session)) is None:
@@ -1170,7 +1170,7 @@ async def match_new_generate(ctx, vlr_link: Option(str, "Link of vlr match.")):
       await ctx.respond(f"Match {match.t1} vs {match.t2} already exists.", ephemeral=True)
       return
     match_link = get_match_link(vlr_code)
-    gen_msg = await ctx.respond("Loading data do not dismiss this message. (should take less than a minute)")
+    gen_msg = await ctx.respond("Loading data do not dismiss this message. (should take less than a minute)", ephemeral=True)
     try:
       response = await get_match_response(match_link)
       if response is None:
