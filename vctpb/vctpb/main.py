@@ -161,6 +161,7 @@ def create_db():
   print("-----------When you rerun the bot set the channels with /assign-----------\n\n\n\n\n\n\n")
   exit()
   
+upload_backup = True
 
 @bot.event
 async def on_ready():
@@ -187,6 +188,9 @@ async def on_ready():
     print("-----------Bot Failed to Start-----------")
     raise e
   atexit.register(backup_full)
+  global upload_backup
+  upload_backup = True
+  auto_backup_full_timer.start()
   auto_backup_timer.start()
   print("\n-----------Bot Starting-----------\n")
   auto_generate_matches_from_vlr_timer.start()
@@ -198,11 +202,20 @@ async def on_ready():
   
   print("\n-----------Bot Started-----------\n")
 
+@tasks.loop(hours=5)
+async def auto_backup_full_timer():
+  global first_upload_backup
+  global upload_backup
+  upload_backup = True
+
 
 @tasks.loop(hours=1)
 async def auto_backup_timer():
+  global upload_backup
   try:
-    backup_full()
+    backup_full(upload_backup)
+    if upload_backup:
+      upload_backup = False
   except Exception as e:
     print(e)
     print("-----------Backup Failed-----------")
@@ -1389,7 +1402,7 @@ bot.add_application_command(matchscg)
 @bot.slash_command(name = "backup", description = "Backup the database.")
 async def backup(ctx):
   if not await has_pm_role(ctx): return
-  backup_full()
+  backup_full(True)
   await ctx.respond("Backup complete.", ephemeral = True)
 #backup end
 

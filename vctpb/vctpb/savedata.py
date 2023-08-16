@@ -10,9 +10,12 @@ from savefiles import delete_folder
 
 BUFSIZE = 1024
 
-def backup_full():
+def backup_full(upload=True):
   #print("-----------starting backup-----------")
-  save_to_github("backup")
+  backup()
+  
+  if upload:
+    save_to_github("backup")
 
 
 
@@ -25,6 +28,7 @@ def is_new_day():
 
 
 def save_to_github(message):
+  
   if not os.path.exists("savedata"):
     print("savedata folder does not exist")
     return
@@ -67,8 +71,6 @@ def save_to_github(message):
 
   
   content = repo.get_contents(all_files[0])
-  
-  backup()
   
   try:
     os.remove("backup.zip")
