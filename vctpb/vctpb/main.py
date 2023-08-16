@@ -173,6 +173,7 @@ async def on_ready():
     if not os.path.exists("savedata"):
       print("savedata folder does not exist")
       os.mkdir("savedata")
+      os.mkdir("savedata/backup")
     #check if file savedata.db exists
     if not os.path.exists("savedata/savedata.db"):
       print("-----------No Savedata File Found-----------")
