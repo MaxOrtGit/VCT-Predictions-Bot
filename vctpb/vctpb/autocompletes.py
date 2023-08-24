@@ -46,14 +46,13 @@ async def multi_user_list_autocomplete(ctx: discord.AutocompleteContext):
 
 #user award autocomplete start
 async def user_awards_autocomplete(ctx: discord.AutocompleteContext):
-  if(member := ctx.options["user"]) is None: return []
-  
-  user = get_user_from_id(member)
-  
-  award_labels = user.get_award_strings()
-  award_labels.reverse()
-  
-  return [award_label for award_label in award_labels if ctx.value.lower() in award_label.lower()]
+  with Session.begin() as session:
+    if (user := get_from_db("User", ctx.interaction.user.id, session)) is None: return ["No user found."]
+    
+    award_labels = user.get_award_strings()
+    award_labels.reverse()
+    
+    return [award_label for award_label in award_labels if ctx.value.lower() in award_label.lower()]
 #user award autocomplete end  
 
 
