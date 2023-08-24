@@ -352,7 +352,7 @@ async def award_list(ctx, user: Option(discord.Member, "User you want to list aw
   
   embedd = create_award_label_list_embedded(user, award_labels)
   await ctx.respond(embed=embedd)
-  
+#award list end
 
 #award rename start
 @award.command(name = "rename", description = """Renames an award.""")
@@ -379,7 +379,7 @@ async def award_rename(ctx, user: Option(discord.Member, "User you want to award
       await ctx.respond("There are multiple awards with this name.", ephemeral = True)
       return
     
-    if user.change_award_name(award, description, session) is None:
+    if user.change_award_name(award, description) is None:
       print(f"change award name not found. {award} {user.code}.")
       await ctx.respond(f"Award not working {description}, {award} {user.code}.", ephemeral = True)
       return
@@ -413,7 +413,7 @@ async def award_rename(ctx, user: Option(discord.Member, "User you want to award
       await ctx.respond("Award not found.", ephemeral = True)
       return
     
-    if user.change_award_amount(award, amount, session) is None:
+    if user.change_award_amount(award, amount) is None:
       print(f"change award name not found. {award}  --  {amount}  --  {user.code}.")
       await ctx.respond(f"Award not working {award}, {amount}, {user.code}.", ephemeral = True)
     
@@ -421,6 +421,27 @@ async def award_rename(ctx, user: Option(discord.Member, "User you want to award
     
     await ctx.respond(f"Award {award.split(', ')[0]} reawarded to {amount}.")
 #award rename end  
+
+#award remove start
+@award.command(name = "remove", description = """Removes an award.""")
+async def award_remove(ctx, user: Option(discord.Member, "User you want to remove an award from."), award: Option(str, "Description of award you want to remove.", autocomplete=user_awards_autocomplete)):
+  if not await has_pm_role(ctx): return
+  with Session.begin() as session:
+    if (user := await get_user_from_ctx(ctx, user, session)) is None: return
+    
+    award_labels = user.get_award_strings()
+    
+    for award_label in award_labels:
+      if award_label == award:
+        award = award_label
+        break
+    else:
+      await ctx.respond("Award not found.", ephemeral = True)
+      return
+    award_label = f"award_{award.split(': ')[-1]}_{award.split(', ')[0]}"
+    user.remove_balance_id(award_label)
+    
+    await ctx.respond(f"Award {award} removed.")
 
 bot.add_application_command(award)
 #award end
@@ -1333,15 +1354,12 @@ async def match_winner(ctx, match: Option(str, "Match you want to reset winner o
       match.date_closed = match.date_winner
       
     m_embedd = create_match_embedded(match, "Placeholder")
-
-    for bet in match.bets:
-      user = bet.user
-      user.remove_balance_id(f"id_{bet.code}", session)
-
     if match.winner == 0:
       for bet in match.bets:
+        user = bet.user
+        user.remove_balance_id(f"id_{bet.code}", session)
         bet.winner = 0
-      await gen_msg.edit_original_response(content="Winner has been set to None.")
+      await gen_msg.edit_original_response(content="Winner has been set to None.", embed=m_embedd, view=MatchView(bot, match))
       return
     
     odds = 0.0
@@ -1362,6 +1380,7 @@ async def match_winner(ctx, match: Option(str, "Match you want to reset winner o
       if bet.team_num == team:
         payout += bet.amount_bet * odds
       user = bet.user
+      user.remove_balance_id(f"id_{bet.code}", session)
       add_balance_user(user, payout, "id_" + str(bet.code), date)
 
       embedd = create_bet_embedded(bet, "Placeholder")

@@ -266,20 +266,26 @@ class User():
   def to_string(self):
     return "Balance: " + str(self.balances)
 
-  def remove_balance_id(self, id, session=None):
-    if session is None:
-      with Session.begin() as session:
-        return self.remove_balance_id(id, session)
-    
-    for balance in self.balances:
-      if balance[0] == id:
-        self.balances.remove(balance)
+  def remove_balance_id(self, id):
+    last = 0
+    found = None
+    for i, balance in enumerate(self.balances):
+      if found and balance[0].startswith("reset_"):
         break
+      if balance[0] == id:
+        diff = balance[1] - last
+        found = i
+      elif found is None:
+        last = balance[1]
+      else:
+        self.balances[i] = (balance[0], balance[1] - diff, balance[2] )
+    if found is not None:
+      self.balances.pop(found)
+      return True
+    print("id to remove not found")
+    return False
 
-  def change_award_name(self, award_label, name, session=None):
-    if session is None:
-      with Session.begin() as session:
-        self.change_award_name(award_label, name, session=session)
+  def change_award_name(self, award_label, name):
     for balance in self.balances:
       if balance[0].startswith("award_") and balance[0][6:14] == award_label[-8:]:
         self.balances[self.balances.index(balance)] = (balance[0][:15] + name, balance[1], balance[2])
@@ -288,10 +294,7 @@ class User():
       return None
     return self
   
-  def change_award_amount(self, award_label, amount, session=None):
-    if session is None:
-      with Session.begin() as session:
-        self.change_award_amount(award_label, amount, session=session)
+  def change_award_amount(self, award_label, amount):
     updating = False
     diff = 0
     for i, balance in enumerate(self.balances):
@@ -306,7 +309,7 @@ class User():
         print(balance[1], type(balance[1]), amount, type(amount))
         diff = amount - (balance[1] - self.balances[i-1][1])
         self.balances[self.balances.index(balance)] = (balance[0], balance[1] + diff, balance[2])
-        updating = True;
+        updating = True
     
     if not updating:
       return None
