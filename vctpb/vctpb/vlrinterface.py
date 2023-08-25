@@ -575,7 +575,7 @@ async def generate_matches_from_vlr(bot, session=None, reply_if_none=True):
       matches.append(match)
   
   if match_channel is not None:
-    if len(matches) != 1 and (reply_if_none or len(matches) != 0):
+    if (reply_if_none or len(matches) != 0):
       tournaments = set([match.tournament_name for match in matches])
       pings = ""
       for tournament in tournaments:
