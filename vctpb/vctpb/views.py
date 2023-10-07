@@ -165,12 +165,20 @@ class BetView(View):
   async def cancel_bet_callback(self, button, interaction):
     with Session.begin() as session:
       if (bet := await self.get_bet(interaction, session)) is None: return
+      
+      if (user := get_from_db("User", interaction.user.id, session)) is None:
+        await interaction.response.send_message("User not found. You can make an account with /balance.", ephemeral=True)
+        return
+      
+      if bet.user_id != user.id:
+        await interaction.response.send_message("You cannot cancel another user's bet.", ephemeral=True)
+        return
+      
       match = bet.match
       if (match is None) or (match.date_closed is not None):
         await interaction.response.send_message(content="Match betting has closed, you cannot cancel the bet.", ephemeral=True)
         return
-        
-      user = bet.user
+      
       if bet.hidden == 0:
         embedd = create_bet_embedded(bet, f"Cancelled Bet")
       else:
