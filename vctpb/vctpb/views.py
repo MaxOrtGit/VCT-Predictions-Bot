@@ -170,7 +170,7 @@ class BetView(View):
         await interaction.response.send_message("User not found. You can make an account with /balance.", ephemeral=True)
         return
       
-      if bet.user_id != user.id:
+      if bet.user_id != user.code:
         await interaction.response.send_message("You cannot cancel another user's bet.", ephemeral=True)
         return
       
