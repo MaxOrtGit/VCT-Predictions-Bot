@@ -71,7 +71,7 @@ def make_data_embed(soup, vlr_code, session):
   data_embed.add_field(name="Tournament Code", value=tournament_code)
   return data_embed
 
-async def get_match_response(match_link, odds_timeout=4, repeat=3):
+async def get_match_response(match_link, odds_timeout=3, repeat=1):
   if driver is not None:
     if odds_timeout != 0:
       for _ in range(repeat):

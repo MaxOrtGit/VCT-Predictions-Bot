@@ -1207,7 +1207,7 @@ async def match_new_generate(ctx, vlr_link: Option(str, "Link of vlr match.")):
     match_link = get_match_link(vlr_code)
     gen_msg = await ctx.respond("Loading data do not dismiss this message. (should take less than a minute)", ephemeral=True)
     try:
-      response = await get_match_response(match_link)
+      response = await get_match_response(match_link, repeat = 2)
       if response is None:
         await gen_msg.edit_original_response(content=f"Match {vlr_code} does not exist.")
         return
