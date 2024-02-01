@@ -27,6 +27,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 
+import typing
+import asyncio
+import functools
+
 driver = None
 
 def start_selenium():
@@ -71,7 +75,15 @@ def make_data_embed(soup, vlr_code, session):
   data_embed.add_field(name="Tournament Code", value=tournament_code)
   return data_embed
 
-async def get_match_response(match_link, odds_timeout=3, repeat=1):
+
+def to_thread(func: typing.Callable) -> typing.Coroutine:
+  @functools.wraps(func)
+  async def wrapper(*args, **kwargs):
+    return await asyncio.to_thread(func, *args, **kwargs)
+  return wrapper
+
+@to_thread
+def get_match_response(match_link, odds_timeout=3, repeat=1):
   if driver is not None:
     if odds_timeout != 0:
       for _ in range(repeat):
@@ -92,6 +104,8 @@ async def get_match_response(match_link, odds_timeout=3, repeat=1):
   web_session = requests.Session()
   response = web_session.get(match_link).text
   return response
+
+
 
 def get_code(link):
   split_link = link.split("/")
