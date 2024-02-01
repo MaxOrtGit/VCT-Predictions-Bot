@@ -33,10 +33,7 @@ def get_all_db(table_name, session=None):
   return list(reversed(session.scalars(select(eval(table_name))).all()))
   
   
-def get_from_db(table_name, code, session=None):
-  if session is None:
-    with Session.begin() as session:
-      return session.get(eval(table_name), code, populate_existing=True)
+def get_from_db(table_name, code, session):
   return session.get(eval(table_name), code, populate_existing=True)
     
     

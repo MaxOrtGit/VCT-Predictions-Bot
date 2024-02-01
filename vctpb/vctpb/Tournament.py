@@ -67,7 +67,7 @@ class Tournament():
     
   async def deactivate(self, guild):
     self.active = False
-    self.delete_role(guild)
+    await self.delete_role(guild)
     users = self.alert_users.copy()
     for user in users:
       self.alert_users.remove(user)

@@ -55,7 +55,7 @@ class User():
     #bet_id = id_[bet_id]: bet id
     #bet_id = award_[award_id]_[name]: awards
     #bet_id = start: start balances
-    #bet_id = reset_[reset_id]_[reset_name]: changed balances with command
+    #bet_id = reset_[reset_id]_[reset_name]_[continued num]: changed balances with command
     
     self.balances = []
     self.balances.append(("start", Decimal(500), date_created))
@@ -347,18 +347,38 @@ class User():
       
     return reset_labels
   
-  def change_reset_name(self, reset_id, name, session=None):
-    if session is None:
-      with Session.begin() as session:
-        self.change_reset_name(reset_id, name, session=session)
+  def change_reset_name(self, reset_id, name):
     for balance in self.balances:
       if balance[0].startswith("reset_") and balance[0][6:14] == reset_id:
         self.balances[self.balances.index(balance)] = (balance[0][:15] + name, balance[1], balance[2])
         print("renaming")
         break
     else:
-      return None
-    return self
+      return False
+    return True
+  
+  # continues from where a season left off
+  def continue_season(self, reset_id, date):
+    print("here")
+    for balance in self.balances:
+      if balance[0].startswith("reset_") and balance[0][6:14] == reset_id:
+        # Go until the next reset
+        last = balance
+        for balance2 in self.balances[self.balances.index(balance):]:
+          if balance2[0].startswith("reset_"):
+            break
+          last = balance2
+        
+        label_parts = last[0].split("_")
+        # reset_id = reset_[reset_id]_[reset_name]_[continued num]
+        # if the last one is a numbe
+        if label_parts[-1].isdigit():
+          label_parts[-1] = str(int(label_parts[-1]) + 1)
+          self.balances.append(("_".join(label_parts), last[1], date))
+        else:
+          self.balances.append(("reset_" + last[0][6:] + "_2", last[1], date))
+        break
+        
   
   def get_new_balance_changes_embeds(self, amount, session=None):
     if session is None:

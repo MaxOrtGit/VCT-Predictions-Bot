@@ -233,11 +233,10 @@ async def team_autocomplete(ctx: discord.AutocompleteContext):
 
 #season autocomplete start
 async def seasons_autocomplete(ctx: discord.AutocompleteContext):
-  
-  if(user := get_user_from_ctx(ctx, send=False)) is None: return []
-  
-  reset_labels = user.get_reset_strings()
-  reset_labels.reverse()
-  
-  return [reset_label for reset_label in reset_labels if ctx.value.lower() in reset_label.lower()]
+  with Session.begin() as session:
+    if (user := get_from_db("User", ctx.interaction.user.id, session)) is None: return ["No user found."]
+    reset_labels = user.get_reset_strings()
+    reset_labels.reverse()
+    
+    return [reset_label for reset_label in reset_labels if ctx.value.lower() in reset_label.lower()]
 #season autocomplete end  

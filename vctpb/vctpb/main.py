@@ -346,12 +346,13 @@ async def award_give(ctx,
 #award list start
 @award.command(name = "list", description = "Lists all the awards given to a user.")
 async def award_list(ctx, user: Option(discord.Member, "User you want to list awards for.")):
-  if (user := await get_user_from_ctx(ctx, user)) is None: return
-  
-  award_labels = user.get_award_strings()
-  
-  embedd = create_award_label_list_embedded(user, award_labels)
-  await ctx.respond(embed=embedd)
+  with Session.begin() as session:
+    if (user := await get_user_from_ctx(ctx, user, session)) is None: return
+    
+    award_labels = user.get_award_strings()
+    
+    embedd = create_award_label_list_embedded(user, award_labels)
+    await ctx.respond(embed=embedd)
 #award list end
 
 #award rename start
@@ -1020,8 +1021,9 @@ async def loan_create(ctx):
 #loan count start
 @loanscg.command(name = "count", description = "See how many loans you have active.")
 async def loan_count(ctx, user: Option(discord.Member, "User you want to get loan count of.", default = None, required = False)):
-  if (user := await get_user_from_ctx(ctx, user)) is None: return
-  await ctx.respond(f"{user.username} currently has {len(user.get_open_loans())} active loans")
+  with Session.begin() as session:
+    if (user := await get_user_from_ctx(ctx, user, session)) is None: return
+    await ctx.respond(f"{user.username} currently has {len(user.get_open_loans())} active loans")
 #loan count end
 
   
@@ -1782,7 +1784,7 @@ seasonsgc = SlashCommandGroup(
 
 #season start start
 @seasonsgc.command(name = "start", description = "Do not user command if not Pig, Start a new season.")
-async def season_start(ctx, name: Option(str, "Name of new season.")):
+async def season_start(ctx, name: Option(str, "Name of new season."), starting_balance: Option(int, "Starting balance for new season.", default=500)):
   if not await has_pm_role(ctx): return
   # to do make the command also include season name
   with Session.begin() as session:
@@ -1792,7 +1794,7 @@ async def season_start(ctx, name: Option(str, "Name of new season.")):
     date = get_date()
     name = f"reset_{code}_{name}"
     for user in users:
-      user.balances.append((name, Decimal(500), date))
+      user.balances.append((name, Decimal(starting_balance), date))
       for _ in user.get_open_loans():
         user.pay_loan(date)
     await ctx.respond(f"New season {name} has sarted.")
@@ -1801,19 +1803,79 @@ async def season_start(ctx, name: Option(str, "Name of new season.")):
 
 #season rename start
 @seasonsgc.command(name = "rename", description = "Rename season.")
-async def season_rename(ctx, season: Option(str, "Description of award you want to rename.", autocomplete=seasons_autocomplete), name: Option(str, "Name of new season.")):
+async def season_rename(ctx, season: Option(str, "Description of season you want to rename.", autocomplete=seasons_autocomplete), name: Option(str, "Name of new season.")):
   if not await has_pm_role(ctx): return
   
   with Session.begin() as session:
     found = False
     for user in get_all_db("User", session):
-      if user.change_reset_name(season[-8:], name, session) != None:
+      if user.change_reset_name(season[-8:], name):
         found = True
     if found:
       await ctx.respond(f"Season {season.split(',')[0]} has been renamed to {name}.")
     else:
       await ctx.respond(f"Season {season} not found.", ephemeral = True)
 #season rename end
+
+#season continue start
+@seasonsgc.command(name = "continue", description = "Continues from a previous season.")
+async def season_continue(ctx, season: Option(str, "Description of season you want to continue.", autocomplete=seasons_autocomplete), starting_balance: Option(int, "Starting balance for new season.", default=500)):
+  if not await has_pm_role(ctx): return
+  with Session.begin() as session:
+    
+    # get command running user
+    if (user := await get_user_from_ctx(ctx, ctx.author, session)) is None: return
+    
+    # get all seasons user has
+    seasons = user.get_reset_strings()
+    
+    # get the index of the season
+    index = seasons.index(season)
+    if index == -1:
+      await ctx.respond(f"Season {season} not found.", ephemeral = True)
+      return
+    if index == len(seasons) - 1:
+      await ctx.respond(f"Season {season} is the current season.", ephemeral = True)
+      return
+    
+    seasonAfter = seasons[index + 1]
+    seasonLabel = "reset_" + season.split(':')[-1][1:] + "_" + ",".join(season.split(',')[:-1])
+    seasonAfterLabel = "reset_" + seasonAfter.split(':')[-1][1:] + "_" + ",".join(seasonAfter.split(',')[:-1])
+    
+    newSeason = ""
+    label_parts = seasonLabel.split("_")
+    if label_parts[-1].isdigit():
+      label_parts[-1] = str(int(label_parts[-1]) + 1)
+      newSeason = "_".join(label_parts)
+    else:
+      newSeason = seasonLabel + "_2"
+      
+    #check if the new season already exists
+    if newSeason in seasons:
+      await ctx.respond(f"Season {newSeason} already exists.", ephemeral = True)
+      return
+      
+    print(seasonLabel)
+    
+    date = get_date()
+    
+    for user in get_all_db("User", session):
+      last = user.balances[0]
+      for balance in user.balances:
+        if balance[0] == seasonAfterLabel:
+          break
+        last = balance
+      else:
+        user.balances.append((seasonLabel, Decimal(starting_balance), date))
+        for _ in user.get_open_loans():
+          user.pay_loan(date)
+        continue
+      user.balances.append((seasonLabel, last[1], date))
+      for _ in user.get_open_loans():
+        user.pay_loan(date)
+      
+    await ctx.respond(f"Season {','.join(season.split(',')[:-1])} has been continued.")
+#season continue end
 
 
 bot.add_application_command(seasonsgc)
