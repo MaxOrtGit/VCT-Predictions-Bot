@@ -1359,7 +1359,7 @@ async def match_winner(ctx, match: Option(str, "Match you want to reset winner o
     if match.winner == 0:
       for bet in match.bets:
         user = bet.user
-        user.remove_balance_id(f"id_{bet.code}", session)
+        user.remove_balance_id(f"id_{bet.code}")
         bet.winner = 0
       await gen_msg.edit_original_response(content="Winner has been set to None.", embed=m_embedd, view=MatchView(bot, match))
       return
@@ -1382,7 +1382,7 @@ async def match_winner(ctx, match: Option(str, "Match you want to reset winner o
       if bet.team_num == team:
         payout += bet.amount_bet * odds
       user = bet.user
-      user.remove_balance_id(f"id_{bet.code}", session)
+      user.remove_balance_id(f"id_{bet.code}")
       add_balance_user(user, payout, "id_" + str(bet.code), date)
 
       embedd = create_bet_embedded(bet, "Placeholder")
