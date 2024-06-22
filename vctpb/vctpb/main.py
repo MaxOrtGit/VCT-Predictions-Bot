@@ -1389,11 +1389,12 @@ async def match_winner(ctx, match: Option(str, "Match you want to reset winner o
       msg_ids.append((bet.message_ids, embedd, bet))
       users.append(user.code)
 
-    no_same_list_user = []
-    [no_same_list_user.append(x) for x in users if x not in no_same_list_user]
-    for user in no_same_list_user:
-      embedd = create_user_embedded(user, session)
-      await ctx.respond(embed=embedd)
+    #no_same_list_user = []
+    #[no_same_list_user.append(x) for x in users if x not in no_same_list_user]
+    #for user in no_same_list_user:
+      #embedd = create_user_embedded(user, session)
+      #await ctx.respond(embed=embedd)
+    #TODO: remove winner part of match reset
 
   tasks = []
   tasks.append(edit_all_messages(bot, match.message_ids, m_embedd, view=MatchView(bot, match)))
