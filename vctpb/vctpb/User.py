@@ -947,7 +947,7 @@ def get_active_users(users: list[User], session=None):
     with Session.begin() as session:
       get_active_users(users, session)
   
-  return [user for user in users if (not user.balances[-1][0].startswith("reset_")) or len(user.active_bets) > 0 or (not user.balances[-1][1] == 500)]
+  return [user for user in users if ((not user.balances[-1][0].startswith("reset_")) or len(user.active_bets) > 0 or (user.balances[-1][1] != 500))]
 
 def get_first_place(users: list[User]):
   users = get_active_users(users)
